@@ -14,8 +14,17 @@ export default function automonaco(
   handle: DocHandle<Record<string, string>>,
   path: string,
 ) {
+  function getUri(path: string) {
+    return monaco.Uri.parse(`file:///${path}`)
+  }
+  function createModel(path: string) {
+    return monaco.editor.createModel(handle.docSync()?.[path] || '', undefined, getUri(path))
+  }
+  function getModel(path: string) {
+    return monaco.editor.getModel(getUri(path))
+  }
   function getOrCreateModel(path: string) {
-    const uri = monaco.Uri.parse(`file:///${path}`)
+    const uri = getUri(path)
     return (
       monaco.editor.getModel(uri) ||
       monaco.editor.createModel(handle.docSync()?.[path] || '', undefined, uri)
@@ -58,28 +67,32 @@ export default function automonaco(
     }
 
     for (const [path, patches] of Object.entries(patchesMap)) {
-      const model = getOrCreateModel(path)
-      model.applyEdits(
-        patches.map(patch => {
-          if (!['del', 'splice'].includes(patch.action)) {
-            throw new Error('Unexpected action for text editor: ' + patch.action)
-          }
-          let startOffset = patch.path[patch.path.length - 1] as number
-          let endOffset = patch.action == 'del' ? startOffset + (patch.length ?? 1) : startOffset
+      const model = getModel(path)
+      if (model) {
+        model.applyEdits(
+          patches.map(patch => {
+            if (!['del', 'splice'].includes(patch.action)) {
+              throw new Error('Unexpected action for text editor: ' + patch.action)
+            }
+            let startOffset = patch.path[patch.path.length - 1] as number
+            let endOffset = patch.action == 'del' ? startOffset + (patch.length ?? 1) : startOffset
 
-          let startPosition = model.getPositionAt(startOffset)!
-          let endPosition = model.getPositionAt(endOffset)!
-          return {
-            range: {
-              startColumn: startPosition?.column,
-              startLineNumber: startPosition?.lineNumber,
-              endColumn: endPosition?.column,
-              endLineNumber: endPosition?.lineNumber,
-            },
-            text: patch.action == 'splice' ? patch.value : '',
-          }
-        }),
-      )
+            let startPosition = model.getPositionAt(startOffset)!
+            let endPosition = model.getPositionAt(endOffset)!
+            return {
+              range: {
+                startColumn: startPosition?.column,
+                startLineNumber: startPosition?.lineNumber,
+                endColumn: endPosition?.column,
+                endLineNumber: endPosition?.lineNumber,
+              },
+              text: patch.action == 'splice' ? patch.value : '',
+            }
+          }),
+        )
+      } else {
+        createModel(path)
+      }
     }
 
     receiving = false
@@ -87,6 +100,9 @@ export default function automonaco(
 
   let localChangeHandler = model.onDidChangeContent(onLocalChange)
   handle.on('change', onRemoteChange)
+
+  // Initialize all models
+  Object.keys(handle.docSync() || {}).forEach(getOrCreateModel)
 
   return () => {
     localChangeHandler.dispose()
