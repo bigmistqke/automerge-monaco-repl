@@ -1,0 +1,32 @@
+{
+  "name": "vite-template-solid",
+  "version": "0.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "monaco-editor": "^0.52.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.0",
+    "vite-plugin-solid": "^2.11.0"
+  },
+  "dependencies": {
+    "@automerge/automerge-repo": "^1.2.1",
+    "@automerge/automerge-repo-network-broadcastchannel": "^1.2.1",
+    "@automerge/automerge-repo-network-websocket": "^1.2.1",
+    "@automerge/automerge-repo-storage-indexeddb": "^1.2.1",
+    "@monaco-editor/loader": "^1.4.0",
+    "dom-serializer": "^2.0.0",
+    "domutils": "^3.2.2",
+    "htmlparser2": "^10.0.0",
+    "solid-js": "^1.9.3",
+    "vite-plugin-wasm": "^3.4.1",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}
