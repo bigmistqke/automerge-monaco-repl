@@ -20,7 +20,7 @@ export function parseHtml({ path, source, executables }: TransformConfig) {
       return api.select('link[href]', (link: HTMLLinkElement) => {
         const href = link.getAttribute('href')!
         if (isUrl(href)) return
-        const url = executables[resolvePath(path, href)]?.()
+        const url = executables.get(resolvePath(path, href))
         if (url) link.setAttribute('href', url)
       })
     },
@@ -29,7 +29,7 @@ export function parseHtml({ path, source, executables }: TransformConfig) {
       return api.select('script[src]', (script: HTMLScriptElement) => {
         const src = script.getAttribute('src')!
         if (isUrl(src)) return
-        const url = executables[resolvePath(path, script.getAttribute('src')!)]?.()
+        const url = executables.get(resolvePath(path, script.getAttribute('src')!))
         if (url) script.setAttribute('src', url)
       })
     },

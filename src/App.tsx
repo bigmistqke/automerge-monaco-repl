@@ -76,11 +76,11 @@ const transformJs: Transform = ({ path, source, executables }) => {
   return transformModulePaths(source, modulePath => {
     if (modulePath.startsWith('.')) {
       // Swap relative module-path out with their respective module-url
-      const url = executables[resolvePath(path, modulePath)]?.()
+      const url = executables.get(resolvePath(path, modulePath))
+      console.log('url', url)
+      // if (!url) throw 'url is undefined'
 
-      if (!url) throw 'url is undefined'
-
-      return url
+      return url || 'yolo'
     } else if (isUrl(modulePath)) {
       // Return url directly
       return modulePath
@@ -175,7 +175,7 @@ export default function App() {
         </div>
         <div ref={element!} style={{ width: '100%', overflow: 'auto' }} />
       </div>
-      <iframe src={executables['index.html']?.()} style={{ height: '100%', width: '100%' }} />
+      <iframe src={executables.get('index.html')} style={{ height: '100%', width: '100%' }} />
     </div>
   )
 }

@@ -7,14 +7,28 @@ import {
 } from 'solid-js'
 import { createStore } from 'solid-js/store'
 import { getExtension } from './path.ts'
-import type { Executable, Extension } from './types.ts'
+import type { Extension } from './types.ts'
 import { createAsync } from './utils/create-async.ts'
 
 export function createExecutables(
   fs: Record<string, string | null>,
   extensions: Record<string, Extension>,
 ) {
-  const [executables, setExecutables] = createStore<Record<string, Executable>>({})
+  const [actions, setActions] = createStore<
+    Record<string, { invalidate(): void; create(): string | undefined; get(): string | undefined }>
+  >({})
+
+  const executables = {
+    get(path: string) {
+      return actions[path]?.get()
+    },
+    invalidate(path: string) {
+      return actions[path]?.invalidate()
+    },
+    create(path: string) {
+      return actions[path]?.create()
+    },
+  }
 
   createRenderEffect(
     mapArray(
@@ -22,7 +36,7 @@ export function createExecutables(
       path => {
         const extension = getExtension(path)
 
-        const [listen, invalidateUrl] = createSignal<void>(null!, { equals: false })
+        const [listen, invalidateExecutable] = createSignal<void>(null!, { equals: false })
 
         const transformed = createAsync(
           async () =>
@@ -39,16 +53,20 @@ export function createExecutables(
           return URL.createObjectURL(blob)
         }
 
-        const executable = createMemo<string | undefined>(previous => {
+        const getExecutable = createMemo<string | undefined>(previous => {
           if (previous) URL.revokeObjectURL(previous)
           listen()
           return createExecutable()
-        }) as Executable
-        executable.new = createExecutable
-        executable.invalidate = invalidateUrl
+        })
 
-        setExecutables({ [path]: executable })
-        onCleanup(() => setExecutables({ [path]: undefined }))
+        setActions({
+          [path]: {
+            get: getExecutable,
+            create: createExecutable,
+            invalidate: invalidateExecutable,
+          },
+        })
+        onCleanup(() => setActions({ [path]: undefined }))
       },
     ),
   )

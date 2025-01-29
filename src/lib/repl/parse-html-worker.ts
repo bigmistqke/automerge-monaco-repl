@@ -21,7 +21,7 @@ export function parseHtmlWorker({ path, source, executables }: TransformConfig) 
         if (hasAttrib(link, 'href')) {
           const href = getAttributeValue(link, 'href')
           if (!href || isUrl(href)) return
-          const url = executables[resolvePath(path, href)]?.()
+          const url = executables.get(resolvePath(path, href))
           if (url) link.attribs.href = url
         }
       })
@@ -32,7 +32,7 @@ export function parseHtmlWorker({ path, source, executables }: TransformConfig) 
         if (hasAttrib(script, 'src')) {
           const src = getAttributeValue(script, 'src')
           if (!src || isUrl(src)) return
-          const url = executables[resolvePath(path, src)]?.()
+          const url = executables.get(resolvePath(path, src))
           if (url) script.attribs.src = url
         }
       })

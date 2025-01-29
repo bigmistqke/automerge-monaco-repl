@@ -55,15 +55,26 @@ export function createFileSystem(extensions: Record<string, Extension>) {
     }
     return true
   }
+  function assertNotDir(path: string) {
+    if (fs[path] === null) {
+      throw `Path is not a file: ${path}`
+    }
+  }
 
   function getExecutable(path: string) {
     path = normalizePath(path)
-
-    if (path === null) {
-      throw `Path is not a file: ${path}`
-    }
-
-    return executables[path]
+    assertNotDir(path)
+    return executables.get(path)
+  }
+  function invalidateExecutable(path: string) {
+    path = normalizePath(path)
+    assertNotDir(path)
+    return executables.invalidate(path)
+  }
+  function createExecutable(path: string) {
+    path = normalizePath(path)
+    assertNotDir(path)
+    return executables.create(path)
   }
 
   function readdir(path: string, options?: { withFileTypes?: false }): Array<string>
@@ -90,6 +101,8 @@ export function createFileSystem(extensions: Record<string, Extension>) {
 
   const api = {
     getExecutable,
+    invalidateExecutable,
+    createExecutable,
     getPaths: () => Object.keys(fs),
     getType(path: string): FileType | 'dir' {
       path = normalizePath(path)
