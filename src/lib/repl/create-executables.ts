@@ -1,4 +1,10 @@
-import { createEffect, createMemo, createSignal, mapArray, onCleanup } from 'solid-js'
+import {
+  createMemo,
+  createEffect as createRenderEffect,
+  createSignal,
+  mapArray,
+  onCleanup,
+} from 'solid-js'
 import { createStore } from 'solid-js/store'
 import { getExtension } from './path.ts'
 import type { Executable, Extension } from './types.ts'
@@ -10,7 +16,7 @@ export function createExecutables(
 ) {
   const [executables, setExecutables] = createStore<Record<string, Executable>>({})
 
-  createEffect(
+  createRenderEffect(
     mapArray(
       () => Object.keys(fs).filter(path => fs[path] !== null),
       path => {

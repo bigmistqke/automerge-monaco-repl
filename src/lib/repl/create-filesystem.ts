@@ -37,7 +37,7 @@ export function createFileSystem(extensions: Record<string, Extension>) {
     const matchFn = createMemo(() => match()(glob))
     createEffect(
       mapArray(
-        () => matchFn()(api.paths()),
+        () => matchFn()(api.getPaths()),
         path => createEffect(() => cb(path)),
       ),
     )
@@ -66,22 +66,6 @@ export function createFileSystem(extensions: Record<string, Extension>) {
     return executables[path]
   }
 
-  /** Get a cached object-url of the corresponding file. */
-  function executable(path: string) {
-    return getExecutable(path)?.()
-  }
-  /** Invalidate the cached object-url of the corresponding file. */
-  executable.invalidate = (path: string) => {
-    return getExecutable(path)?.invalidate()
-  }
-  /** Create a new, uncached object-url from the corresponding file. */
-  executable.new = (path: string) => {
-    return getExecutable(path)?.new()
-  }
-  executable.watch = (path: string, callback: (url: string | undefined) => void) => {
-    createEffect(() => callback(executable(path)))
-  }
-
   function readdir(path: string, options?: { withFileTypes?: false }): Array<string>
   function readdir(
     path: string,
@@ -105,9 +89,9 @@ export function createFileSystem(extensions: Record<string, Extension>) {
   }
 
   const api = {
-    executable,
-    paths: () => Object.keys(executables),
-    type(path: string): FileType | 'dir' {
+    getExecutable,
+    getPaths: () => Object.keys(fs),
+    getType(path: string): FileType | 'dir' {
       path = normalizePath(path)
 
       assertPathExists(path)
@@ -209,7 +193,7 @@ export function createFileSystem(extensions: Record<string, Extension>) {
       cb(api.readdir(path, { withFileTypes: true }), path)
     },
     watchPaths(cb: (paths: Array<string>) => void) {
-      createEffect(() => cb(api.paths()))
+      createEffect(() => cb(api.getPaths()))
     },
     // Set match function
     setMatch: setMatch,

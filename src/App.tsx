@@ -14,8 +14,8 @@ import {
   type Transform,
 } from '@bigmistqke/repl'
 import { default as loader } from '@monaco-editor/loader'
+import { createDocumentProjection } from 'automerge-repo-solid-primitives'
 import { createEffect, createResource, createSignal, onCleanup } from 'solid-js'
-import { createStore, reconcile } from 'solid-js/store'
 import ts from 'typescript'
 import automonaco from './automonaco.ts'
 
@@ -131,15 +131,10 @@ export default function App() {
   const [monaco] = createResource(
     async () => await (loader as unknown as (typeof loader)['default']).init(),
   )
+
   const [doc] = createResource(async () => await handle.doc())
-  const [fs, setFs] = createStore<Record<string, string | null>>(handle.docSync()!)
-
-  const objectUrls = createExecutables(fs, extensions)
-
-  async function initializeFs() {
-    await handle.whenReady()
-    setFs(reconcile(handle.docSync()!))
-  }
+  const fs = createDocumentProjection<Record<string, string | null>>(handle)
+  const executables = createExecutables(fs, extensions)
 
   createEffect(async () => {
     const _monaco = monaco()
@@ -153,8 +148,6 @@ export default function App() {
       automaticLayout: true,
     })
 
-    handle.on('change', () => setFs(reconcile(handle.docSync()!)))
-
     createEffect(() =>
       _monaco.languages.typescript.typescriptDefaults.setCompilerOptions(typeDownloader.tsconfig()),
     )
@@ -163,8 +156,6 @@ export default function App() {
       const cleanup = automonaco(_monaco, editor, handle, currentFile())
       onCleanup(cleanup)
     })
-
-    initializeFs()
   })
 
   return (
@@ -184,7 +175,7 @@ export default function App() {
         </div>
         <div ref={element!} style={{ width: '100%', overflow: 'auto' }} />
       </div>
-      <iframe src={objectUrls['index.html']?.()} style={{ height: '100%', width: '100%' }} />
+      <iframe src={executables['index.html']?.()} style={{ height: '100%', width: '100%' }} />
     </div>
   )
 }

@@ -228,7 +228,7 @@ export function bindMonaco(props: {
   })
 
   createEffect(
-    mapArray(props.fs.paths, path => {
+    mapArray(props.fs.getPaths, path => {
       createEffect(() => {
         const type = getType(path)
         if (type === 'dir') return

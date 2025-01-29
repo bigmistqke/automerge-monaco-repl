@@ -23,6 +23,9 @@ dependencies:
   '@monaco-editor/loader':
     specifier: ^1.4.0
     version: 1.4.0(monaco-editor@0.52.2)
+  automerge-repo-solid-primitives:
+    specifier: 2.0.0-beta.5
+    version: 2.0.0-beta.5(solid-js@1.9.4)
   dom-serializer:
     specifier: ^2.0.0
     version: 2.0.0
@@ -753,6 +756,14 @@ packages:
     requiresBuild: true
     optional: true
 
+  /@solid-primitives/utils@6.3.0(solid-js@1.9.4):
+    resolution: {integrity: sha512-e7hTlJ1Ywh2+g/Qug+n4L1mpfxsikoIS4/sHE2EK9WatQt8UJqop/vE6bsLnXlU1xuhb/jo94Ah5Y27rd4wP7A==}
+    peerDependencies:
+      solid-js: ^1.6.12
+    dependencies:
+      solid-js: 1.9.4
+    dev: false
+
   /@tsconfig/node10@1.0.11:
     resolution: {integrity: sha512-DcRjDCujK/kCk/cUe8Xz8ZSpm8mS3mNNpta+jGCA6USEDfktlNvm1+IuZ9eTcDbNk41BHwpHHeW+N1lKCz4zOw==}
     dev: false
@@ -823,6 +834,16 @@ packages:
     resolution: {integrity: sha512-58S9QDqG0Xx27YwPSt9fJxivjYl432YCwfDMfZ+71RAqUrZef7LrKQZ3LHLOwCS4FLNBplP533Zx895SeOCHvA==}
     dev: false
 
+  /automerge-repo-solid-primitives@2.0.0-beta.5(solid-js@1.9.4):
+    resolution: {integrity: sha512-ULsXh0x42+FB2j6sTIL4R3EKQ/ugzHvKk+3QsRZdrqqnjOaBIHavnbspXrDnAoL+zzEK156PZv4jfI25FQsHoQ==}
+    peerDependencies:
+      solid-js: ^1.8.19
+    dependencies:
+      '@solid-primitives/utils': 6.3.0(solid-js@1.9.4)
+      cabbages: 0.1.0
+      solid-js: 1.9.4
+    dev: false
+
   /babel-plugin-jsx-dom-expressions@0.39.5(@babel/core@7.26.7):
     resolution: {integrity: sha512-dwyVkszHRsZCXfFusu3xq1DJS7twhgLrjEpMC1gtTfJG1xSrMMKWWhdl1SFFFNXrvYDsoHiRxSbku/TzLxHNxg==}
     peerDependencies:
@@ -872,6 +893,10 @@ packages:
     dependencies:
       '@noble/hashes': 1.7.1
       bs58: 5.0.0
+    dev: false
+
+  /cabbages@0.1.0:
+    resolution: {integrity: sha512-sAGTxqsLyTHAXM2T3mTKdIwJPqczswCuToYlQdytO5m2zYAgT4RbTLn1R5IjIuwUPm2+kzLDxHPo12kWYBURVA==}
     dev: false
 
   /caniuse-lite@1.0.30001695:
