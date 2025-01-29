@@ -17,6 +17,9 @@ dependencies:
   '@automerge/automerge-repo-storage-indexeddb':
     specifier: ^1.2.1
     version: 1.2.1(@types/node@22.10.10)(typescript@5.7.3)
+  '@bigmistqke/solid-grid-split':
+    specifier: ^0.0.2
+    version: 0.0.2(solid-js@1.9.4)
   '@monaco-editor/loader':
     specifier: ^1.4.0
     version: 1.4.0(monaco-editor@0.52.2)
@@ -303,6 +306,15 @@ packages:
       '@babel/helper-string-parser': 7.25.9
       '@babel/helper-validator-identifier': 7.25.9
     dev: true
+
+  /@bigmistqke/solid-grid-split@0.0.2(solid-js@1.9.4):
+    resolution: {integrity: sha512-SbAZrBMc+hcQsHvGT/xzIVQH5vBsA4dLzOQVgKJ+1aQOd2NtbAu1jIEaR6EpxIJwyLZ1ZJ2VQtdZw7VdRyFB2g==}
+    engines: {node: '>=18', pnpm: '>=9.0.0'}
+    peerDependencies:
+      solid-js: ^1.6.0
+    dependencies:
+      solid-js: 1.9.4
+    dev: false
 
   /@cbor-extract/cbor-extract-darwin-arm64@2.2.0:
     resolution: {integrity: sha512-P7swiOAdF7aSi0H+tHtHtr6zrpF3aAq/W9FXx5HektRvLTM2O89xCyXF3pk7pLc7QpaY7AoaE8UowVf9QBdh3w==}

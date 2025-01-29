@@ -23,6 +23,7 @@
     "@automerge/automerge-repo-network-broadcastchannel": "^1.2.1",
     "@automerge/automerge-repo-network-websocket": "^1.2.1",
     "@automerge/automerge-repo-storage-indexeddb": "^1.2.1",
+    "@bigmistqke/solid-grid-split": "^0.0.2",
     "@monaco-editor/loader": "^1.4.0",
     "dom-serializer": "^2.0.0",
     "domutils": "^3.2.2",

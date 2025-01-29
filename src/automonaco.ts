@@ -30,6 +30,7 @@ export default function automonaco(
       monaco.editor.createModel(handle.docSync()?.[path] || '', undefined, uri)
     )
   }
+
   const model = getOrCreateModel(path)
   editor.setModel(model)
 
@@ -37,7 +38,6 @@ export default function automonaco(
   let receiving = false
 
   function onLocalChange(event: editor.IModelContentChangedEvent) {
-    console.log('LOCAL CHANGE', receiving)
     if (!event.changes.length) return
     if (receiving) return
     sending = true

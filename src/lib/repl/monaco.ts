@@ -213,7 +213,7 @@ export function bindMonaco(props: {
   )
 
   function getType(path: string) {
-    let type: string = props.fs.getType(path)
+    let type: string = props.fs.type(path)
     const extension = getExtension(path)
     if (extension && extension in languages) {
       type = languages[extension]!

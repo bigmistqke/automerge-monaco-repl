@@ -29,7 +29,7 @@ export function parseHtmlWorker({
         if (hasAttrib(link, 'href')) {
           const href = getAttributeValue(link, 'href')
           if (!href || isUrl(href)) return
-          const url = fs.url(resolvePath(path, href))
+          const url = fs.executable(resolvePath(path, href))
           if (url) link.attribs.href = url
         }
       })
@@ -40,7 +40,7 @@ export function parseHtmlWorker({
         if (hasAttrib(script, 'src')) {
           const src = getAttributeValue(script, 'src')
           if (!src || isUrl(src)) return
-          const url = fs.url(resolvePath(path, src))
+          const url = fs.executable(resolvePath(path, src))
           if (url) script.attribs.src = url
         }
       })
