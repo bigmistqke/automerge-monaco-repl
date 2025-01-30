@@ -120,6 +120,11 @@ export default function App() {
   const [tabs, setTabs] = createSignal<Array<string>>(['index.html'])
   const [selectedPath, selectPath] = createSignal('index.html')
 
+  function addTab(tab: string) {
+    if (tabs().includes(tab)) return
+    setTabs(tabs => [...tabs, tab])
+  }
+
   const [monaco] = createResource(async () => {
     const monaco = await (loader as unknown as (typeof loader)['default']).init()
     nightOwl.colors['editor.background'] = '#00000000'
@@ -176,6 +181,19 @@ export default function App() {
       fontFamily: 'geist-mono',
     })
 
+    editor.onMouseDown(event => {
+      const relativePath =
+        event.target.type === 6
+          ? event.target.element?.innerText
+          : event.target.element?.dataset?.href
+
+      if (relativePath && event.event.metaKey) {
+        const path = resolvePath(selectedPath(), relativePath)!
+        addTab(path)
+        selectPath(path)
+      }
+    })
+
     createEffect(() =>
       _monaco.languages.typescript.typescriptDefaults.setCompilerOptions(typeDownloader.tsconfig()),
     )
@@ -193,9 +211,7 @@ export default function App() {
           fs={fs}
           onPathSelect={path => {
             selectPath(path)
-            if (tabs().includes(path)) return
-            console.log('add path', path)
-            setTabs(tabs => [...tabs, path])
+            addTab(path)
           }}
           selectedPath={selectedPath()}
           isPathSelected={isPathSelected}
@@ -204,7 +220,7 @@ export default function App() {
             handle.change(doc => {
               doc[path] = type === 'dir' ? null : ''
             })
-            setTabs(tabs => [...tabs, path])
+            addTab(path)
             selectPath(path)
           }}
         />
@@ -212,25 +228,27 @@ export default function App() {
       <Handle />
       <Split.Pane class={styles.editor}>
         <div class={clsx(styles.tabs, styles.bar)}>
-          <div>
-            <For each={tabs()}>
-              {path => (
-                <span class={clsx(styles.tab, isPathSelected(path) && styles.selected)}>
-                  <button class={styles.hover} onClick={() => selectPath(path)}>
-                    {getName(path)}
-                  </button>
-                  <button
-                    class={styles.hover}
-                    onClick={() => setTabs(tabs => tabs.filter(tab => tab !== path))}
-                  >
-                    <Codicon kind="close" />
-                  </button>
-                </span>
-              )}
-            </For>
-          </div>
+          <For each={tabs()}>
+            {path => (
+              <span class={clsx(styles.tab, isPathSelected(path) && styles.selected, styles.hover)}>
+                <button onClick={() => selectPath(path)}>{getName(path)}</button>
+                <button
+                  class={styles.hover}
+                  onClick={() => {
+                    if (selectedPath() === path) {
+                      const index = tabs().findIndex(tab => tab === path)
+                      selectPath(tabs()[index - 1])
+                    }
+                    setTabs(tabs => tabs.filter(tab => tab !== path))
+                  }}
+                >
+                  <Codicon kind="close" />
+                </button>
+              </span>
+            )}
+          </For>
         </div>
-        <div ref={element!} />
+        <div ref={element!} class={styles.monaco} />
       </Split.Pane>
       <Handle />
       <Split.Pane>

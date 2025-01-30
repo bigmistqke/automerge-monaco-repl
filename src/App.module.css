@@ -25,6 +25,7 @@ body/* [data-color-mode='dark'] */ {
   --color-brand: #0f172a;
   --color-bar: #1c263a;
   --color-editor: #000c18;
+  --color-tab-inactive: #000c1856;
   --color-explorer-active: #98b3cf95;
   --color-explorer: #070725;
   --color-foreground-inactive: #8f9daeab;
@@ -39,6 +40,10 @@ body/* [data-color-mode='dark'] */ {
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+button {
+  cursor: pointer;
 }
 
 .button {
@@ -105,52 +110,41 @@ code {
 
 .editor {
   display: grid;
-  grid-template-rows: var(--margin) 1fr;
+  grid-template-rows: auto 1fr;
   background: var(--color-editor);
 }
 
 .tabs {
   display: flex;
-  & > div {
-    display: flex;
-    flex-wrap: nowrap;
-    align-content: start;
-    gap: 3px;
-    overflow-y: auto;
-  }
-}
-
-.hover {
-  position: relative;
-  cursor: pointer;
-
-  &:hover::after {
-    position: absolute;
-    top: 0px;
-    right: 0px;
-    bottom: 0px;
-    left: 0px;
-    opacity: 0.5;
-    mix-blend-mode: lighten;
-    background-color: rgba(250, 250, 250, 0.5);
-    pointer-events: none;
-    content: '';
-  }
+  gap: 2px;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-color: var(--color-foreground-inactive) transparent;
+  scrollbar-width: thin;
 }
 
 .tab {
   display: grid;
   grid-template-columns: 1fr auto;
-  background: var(--color-editor);
-  &.selected > button:first-child {
-    text-decoration: underline;
+  background: var(--color-tab-inactive);
+  height: var(--margin);
+
+  & > button:first-child {
+    padding-left: 15px;
+  }
+
+  &.selected {
+    background: var(--color-editor);
+    & > button:first-child {
+      text-decoration: underline;
+    }
   }
   & > button {
     display: flex;
     align-items: center;
     border: none;
     background: transparent;
-    padding: var(--padding);
     color: var(--color-foreground);
     font-family: geist;
   }
@@ -207,4 +201,9 @@ code {
 
 [data-active-pane] {
   pointer-events: none;
+  user-select: none;
+}
+
+[data-active-pane] .monaco {
+  overflow: hidden;
 }
