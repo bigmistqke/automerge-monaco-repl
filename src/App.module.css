@@ -12,6 +12,11 @@
   font-family: geist-mono;
 }
 
+* {
+  scrollbar-color: var(--color-foreground-inactive) transparent;
+  scrollbar-width: thin;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
@@ -110,21 +115,12 @@ button {
   background: var(--color-bar);
 }
 
-.editor {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  background: var(--color-editor);
-  overflow: unset !important;
-}
-
 .tabs {
   display: flex;
   gap: 2px;
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-color: var(--color-foreground-inactive) transparent;
-  scrollbar-width: thin;
 }
 
 .tab {
@@ -132,6 +128,7 @@ button {
   grid-template-columns: 1fr auto;
   background: var(--color-tab-inactive);
   height: var(--margin);
+  white-space: nowrap;
 
   & > button:first-child {
     padding-left: 15px;
@@ -151,6 +148,23 @@ button {
     color: var(--color-foreground);
     font-family: geist;
   }
+
+  &:hover > button:last-child {
+    visibility: visible;
+  }
+  & > button:last-child {
+    visibility: hidden;
+  }
+}
+
+.editor {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: var(--color-editor);
+}
+
+.monaco > :global(.monaco-editor) {
+  outline: none !important;
 }
 
 .explorerPane {
@@ -162,6 +176,7 @@ button {
   display: grid;
   align-content: start;
   background-color: var(--color-explorer);
+  overflow-x: auto;
 }
 
 .explorerBar {
@@ -171,16 +186,16 @@ button {
 
 .dir,
 .file {
+  display: grid;
   border: none;
   background: transparent;
-  padding: var(--padding);
+  padding-right: 0px;
+  height: var(--margin);
   color: var(--color-foreground);
   font-size: 10pt;
   font-family: geist;
   text-align: left;
-  &.cursor {
-    border-right: 1px solid var(--color-foreground);
-  }
+  white-space: nowrap;
 }
 
 .file {
@@ -188,20 +203,20 @@ button {
 }
 
 .dir {
-  display: grid;
   grid-template-columns: var(--margin) 1fr;
   align-items: center;
-  padding-right: 0px;
   padding-left: calc(var(--layer) * 10px);
   text-align: left;
 
   & > button {
-    border: none;
     background: transparent;
-    padding: 0px;
     color: var(--color-foreground);
     text-align: center;
   }
+}
+
+.cursor {
+  border-right: 1px solid var(--color-foreground);
 }
 
 [data-active-pane] {

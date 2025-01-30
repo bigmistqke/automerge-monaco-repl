@@ -5,8 +5,8 @@ import { IndexedDBStorageAdapter } from '@automerge/automerge-repo-storage-index
 import {
   createExecutables,
   createMonacoTypeDownloader,
+  getName,
   isUrl,
-  Monaco,
   parseHtml,
   resolvePath,
   transformModulePaths,
@@ -14,9 +14,13 @@ import {
 } from '@bigmistqke/repl'
 import { Split } from '@bigmistqke/solid-grid-split'
 import { createDocumentProjection } from 'automerge-repo-solid-primitives'
-import { createSelector, createSignal } from 'solid-js'
+import clsx from 'clsx'
+import { languages } from 'monaco-editor'
+import nightOwl from 'monaco-themes/themes/Night Owl.json'
+import { createEffect, createSelector, createSignal, For } from 'solid-js'
 import ts from 'typescript'
 import styles from './App.module.css'
+import { Codicon } from './codicon/index.tsx'
 import { Editor } from './editor.tsx'
 import { Explorer } from './explorer.tsx'
 
@@ -69,7 +73,7 @@ document.location.hash = handle.url
 /**********************************************************************************/
 
 const typeDownloader = createMonacoTypeDownloader({
-  target: Monaco.ScriptTarget.ES2015,
+  target: languages.typescript.ScriptTarget.ES2015,
   esModuleInterop: true,
   allowImportingTsExtensions: true,
 })
@@ -168,16 +172,43 @@ export default function App() {
         />
       </Split.Pane>
       <Handle />
-      <Editor
-        handle={handle}
-        isPathSelected={isPathSelected}
-        onAddTab={addTab}
-        onDeleteTab={deleteTab}
-        onSelectPath={selectPath}
-        selectedPath={selectedPath()}
-        tabs={tabs()}
-        tsconfig={typeDownloader.tsconfig()}
-      />
+      <Split.Pane class={styles.editor}>
+        <div class={clsx(styles.tabs, styles.bar)}>
+          <For each={tabs()}>
+            {path => (
+              <span
+                ref={element => {
+                  createEffect(() => isPathSelected(path) && element.scrollIntoView())
+                }}
+                class={clsx(styles.tab, isPathSelected(path) && styles.selected)}
+              >
+                <button onClick={() => selectPath(path)}>{getName(path)}</button>
+                <button
+                  onClick={() => {
+                    if (isPathSelected(path)) {
+                      const index = tabs().findIndex(tab => tab === path)
+                      selectPath(tabs()[index - 1])
+                    }
+                    deleteTab(path)
+                  }}
+                >
+                  <Codicon kind="close" />
+                </button>
+              </span>
+            )}
+          </For>
+        </div>
+        <Editor
+          handle={handle}
+          path={selectedPath()}
+          tsconfig={typeDownloader.tsconfig()}
+          onLink={path => {
+            addTab(path)
+            selectPath(path)
+          }}
+          theme={nightOwl}
+        />
+      </Split.Pane>
       <Handle />
       <Split.Pane>
         <iframe src={executables.get('index.html')} class={styles.frame} />

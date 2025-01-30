@@ -44,7 +44,15 @@ export function Explorer(explorerProps: {
         <input
           ref={element => onMount(() => element.focus())}
           class={styles.input}
-          onBlur={() => setTemporaryDirEnt()}
+          onBlur={e => {
+            if (
+              e.relatedTarget instanceof HTMLElement &&
+              e.relatedTarget.getAttribute('data-blur-block')
+            ) {
+              return
+            }
+            setTemporaryDirEnt()
+          }}
           onKeyDown={e => {
             if (e.code === 'Enter') {
               batch(() => {
@@ -60,30 +68,19 @@ export function Explorer(explorerProps: {
         />
       )
     }
+
     return (
-      <Show
-        when={props.type === 'dir'}
-        fallback={
-          <div
-            class={clsx(styles.dirEnt, styles.file)}
-            style={{
-              '--layer': props.layer,
-            }}
-          >
-            <Input />
-          </div>
-        }
+      <div
+        class={clsx(styles.dirEnt, styles.cursor, props.type === 'dir' ? styles.dir : styles.file)}
+        style={{
+          '--layer': props.layer,
+        }}
       >
-        <div
-          class={clsx(styles.dirEnt, styles.dir)}
-          style={{
-            '--layer': props.layer,
-          }}
-        >
+        <Show when={props.type === 'dir'}>
           <Codicon kind="chevron-right" />
-          <Input />
-        </div>
-      </Show>
+        </Show>
+        <Input />
+      </div>
     )
   }
 
@@ -97,9 +94,9 @@ export function Explorer(explorerProps: {
       for (const [path, value] of Object.entries(explorerProps.fs)) {
         if (!path.includes(props.path) || path === props.path) continue
 
-        const relativePath = props.path ? path.slice(props.path.length + 1) : path
+        const parent = getParentPath(path)
 
-        if (relativePath.split('/').length > 1) continue
+        if (parent !== props.path) continue
 
         if (value === null) dirs.push(path)
         else files.push(path)
@@ -129,7 +126,7 @@ export function Explorer(explorerProps: {
               styles.dirEnt,
               styles.dir,
               styles.hover,
-              isCursor(props.path) && styles.cursor,
+              !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
             )}
             style={{
               '--layer': props.layer - 1,
@@ -145,8 +142,15 @@ export function Explorer(explorerProps: {
         </Show>
 
         <Show when={!collapsed()}>
+          <Show when={temporaryDirEnt() === 'dir' && hasTemporaryDirEnt(props.path)}>
+            <TemporaryDirEnt
+              parentPath={props.path}
+              layer={props.layer}
+              type={temporaryDirEnt()!}
+            />
+          </Show>
           <Index each={dirEnts().dirs}>{dir => <Dir layer={props.layer + 1} path={dir()} />}</Index>
-          <Show when={hasTemporaryDirEnt(props.path)}>
+          <Show when={temporaryDirEnt() === 'file' && hasTemporaryDirEnt(props.path)}>
             <TemporaryDirEnt
               parentPath={props.path}
               layer={props.layer}
@@ -162,7 +166,12 @@ export function Explorer(explorerProps: {
   function File(props: { layer: number; path: string }) {
     return (
       <button
-        class={clsx(styles.dir, styles.file, styles.hover, isCursor(props.path) && styles.cursor)}
+        class={clsx(
+          styles.dir,
+          styles.file,
+          styles.hover,
+          !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
+        )}
         style={{
           'padding-left': `calc(${props.layer} * 10px + var(--margin))`,
           'text-decoration': explorerProps.isPathSelected(props.path) ? 'underline' : 'none',
@@ -180,8 +189,12 @@ export function Explorer(explorerProps: {
   return (
     <>
       <div class={clsx(styles.bar, styles.explorerBar)}>
-        <CodiconButton kind="new-file" onClick={() => setTemporaryDirEnt('file')} />
-        <CodiconButton kind="new-folder" onClick={() => setTemporaryDirEnt('dir')} />
+        <CodiconButton kind="new-file" data-blur-block onClick={() => setTemporaryDirEnt('file')} />
+        <CodiconButton
+          kind="new-folder"
+          data-blur-block
+          onClick={() => setTemporaryDirEnt('dir')}
+        />
       </div>
       <div class={styles.explorer}>
         <Dir path="" layer={0} />
