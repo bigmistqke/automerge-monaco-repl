@@ -1,33 +1,210 @@
-.App {
-  text-align: center;
+@font-face {
+  font-style: normal;
+  font-weight: normal;
+  src: url('./assets/geist/Geist-Regular.ttf');
+  font-family: geist;
 }
 
-.logo {
-  animation: logo-spin infinite 20s linear;
-  height: 40vmin;
-  pointer-events: none;
+@font-face {
+  font-style: normal;
+  font-weight: normal;
+  src: url('./assets/geist-mono/GeistMono-Regular.ttf');
+  font-family: geist-mono;
 }
 
-.header {
-  background-color: #282c34;
-  min-height: 100vh;
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body/* [data-color-mode='dark'] */ {
+  --color-anchor: #e4ecff;
+  --color-brand: #0f172a;
+  --color-bar: #1c263a;
+  --color-editor: #000c18;
+  --color-explorer-active: #98b3cf95;
+  --color-explorer: #070725;
+  --color-foreground-inactive: #8f9daeab;
+  --color-foreground: #cdd4db;
+  --color-background-hover: #d9dcdf31;
+  --color-scroll-bar: #293a5d;
+  --color-handle: #466299;
+  --color-selection: #67a1df95;
+  --padding: 2px 8px;
+  --margin: 25px;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+.button {
+  border: none;
+  background-color: transparent;
+  color: var(--color-foreground);
+}
+
+.input {
+  box-sizing: border-box;
+  outline: none;
+  border: none;
+  background-color: transparent;
+  width: 100%;
+  color: var(--color-foreground);
+}
+
+.app {
+  display: grid;
+  grid-template-columns: auto repeat(2, 1fr);
+  height: 100vh;
+  overflow: hidden;
+  font-family: geist-mono;
+}
+
+.handle {
+  z-index: 10;
+  cursor: ew-resize;
+  overflow: auto !important;
+
+  &.column div {
+    cursor: ns-resize;
+    margin-top: -2.5px;
+    margin-left: 0px;
+    width: 100%;
+    height: 5px;
+  }
+
+  & div {
+    position: absolute;
+    transition: background-color 0.125s;
+    margin-top: 0px;
+    margin-left: -2.5px;
+    background-color: transparent;
+    width: 5px;
+    height: 100%;
+  }
+
+  & div:hover,
+  &[data-active-handle] div {
+    background-color: var(--color-handle);
+  }
+}
+
+.frame {
+  border: none;
+  width: 100%;
+  height: 100%;
+}
+
+.bar {
+  background: var(--color-bar);
+}
+
+.editor {
+  display: grid;
+  grid-template-rows: var(--margin) 1fr;
+  background: var(--color-editor);
+}
+
+.tabs {
   display: flex;
-  flex-direction: column;
+  & > div {
+    display: flex;
+    flex-wrap: nowrap;
+    align-content: start;
+    gap: 3px;
+    overflow-y: auto;
+  }
+}
+
+.hover {
+  position: relative;
+  cursor: pointer;
+
+  &:hover::after {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    opacity: 0.5;
+    mix-blend-mode: lighten;
+    background-color: rgba(250, 250, 250, 0.5);
+    pointer-events: none;
+    content: '';
+  }
+}
+
+.tab {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  background: var(--color-editor);
+  &.selected > button:first-child {
+    text-decoration: underline;
+  }
+  & > button {
+    display: flex;
+    align-items: center;
+    border: none;
+    background: transparent;
+    padding: var(--padding);
+    color: var(--color-foreground);
+    font-family: geist;
+  }
+}
+
+.explorerPane {
+  display: grid;
+  grid-template-rows: var(--margin) 1fr;
+}
+
+.explorer {
+  display: grid;
+  align-content: start;
+  background-color: var(--color-explorer);
+  overflow: hidden;
+}
+
+.explorerBar {
+  display: flex;
+  justify-content: end;
+}
+
+.dir,
+.file {
+  border: none;
+  background: transparent;
+  padding: var(--padding);
+  color: var(--color-foreground);
+  font-size: 10pt;
+  font-family: geist;
+  text-align: left;
+}
+
+.file {
+  padding-left: calc(var(--layer) * 10px + var(--margin));
+}
+
+.dir {
+  display: grid;
+  grid-template-columns: var(--margin) 1fr;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  padding-right: 0px;
+  padding-left: calc(var(--layer) * 10px);
+  text-align: left;
+
+  & > button {
+    border: none;
+    background: transparent;
+    padding: 0px;
+    color: var(--color-foreground);
+    text-align: center;
+  }
 }
 
-.link {
-  color: #b318f0;
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+[data-active-pane] {
+  pointer-events: none;
 }

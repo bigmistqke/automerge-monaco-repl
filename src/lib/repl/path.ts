@@ -2,6 +2,16 @@ export function getExtension(path: string) {
   return path.split('/').slice(-1)[0]?.split('.')[1]
 }
 
+export function getName(path: string) {
+  const parts = path.split('/')
+  return parts[parts.length - 1] || ''
+}
+
+export function getParentPath(path: string) {
+  const parts = path.split('/')
+  return parts.slice(0, -1).join('/')
+}
+
 export function normalizePath(path: string) {
   return path.replace(/^\/+/, '')
 }

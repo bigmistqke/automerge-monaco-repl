@@ -12,6 +12,7 @@
     "types": ["vite/client"],
     "noEmit": true,
     "isolatedModules": true,
+    "resolveJsonModule": true,
     "paths": {
       "@bigmistqke/repl": ["./src/lib/repl/index.ts"]
     }

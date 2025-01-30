@@ -11,7 +11,7 @@ import type { editor } from 'monaco-editor/esm/vs/editor/editor.api.d.ts'
 export default function automonaco(
   monaco: Monaco,
   editor: editor.IStandaloneCodeEditor,
-  handle: DocHandle<Record<string, string>>,
+  handle: DocHandle<Record<string, string | null>>,
   path: string,
 ) {
   function getUri(path: string) {

@@ -5,7 +5,7 @@ import { IndexedDBStorageAdapter } from '@automerge/automerge-repo-storage-index
 import {
   createExecutables,
   createMonacoTypeDownloader,
-  Extension,
+  getName,
   isUrl,
   Monaco,
   parseHtml,
@@ -13,11 +13,24 @@ import {
   transformModulePaths,
   type Transform,
 } from '@bigmistqke/repl'
+import { Split } from '@bigmistqke/solid-grid-split'
 import { default as loader } from '@monaco-editor/loader'
 import { createDocumentProjection } from 'automerge-repo-solid-primitives'
-import { createEffect, createResource, createSignal, onCleanup } from 'solid-js'
+import clsx from 'clsx'
+import nightOwl from 'monaco-themes/themes/Night Owl.json'
+import {
+  createEffect,
+  createResource,
+  createSelector,
+  createSignal,
+  For,
+  onCleanup,
+} from 'solid-js'
 import ts from 'typescript'
+import styles from './App.module.css'
 import automonaco from './automonaco.ts'
+import { Codicon } from './codicon/index.tsx'
+import { Explorer } from './explorer.tsx'
 
 /**********************************************************************************/
 /*                                                                                */
@@ -34,12 +47,12 @@ const repo = new Repo({
 })
 const rootDocUrl = document.location.hash.substring(1)
 
-let handle: DocHandle<Record<string, string>>
+let handle: DocHandle<Record<string, string | null>>
 if (isValidAutomergeUrl(rootDocUrl)) {
-  handle = repo.find<Record<string, string>>(rootDocUrl)
+  handle = repo.find<Record<string, string | null>>(rootDocUrl)
 } else {
-  handle = repo.create<Record<string, string>>({
-    'main.ts': `import { randomColor } from "./math.ts"
+  handle = repo.create<Record<string, string | null>>({
+    'src/main.ts': `import { randomColor } from "./math.ts"
     
 function randomBodyColor(){
   document.body.style.background = randomColor()
@@ -47,14 +60,15 @@ function randomBodyColor(){
 
 requestAnimationFrame(randomBodyColor)
 setInterval(randomBodyColor, 2000)`,
-    'math.ts': `export function randomValue(){
+    'src/math.ts': `export function randomValue(){
   return 200 + Math.random() * 50
 }
     
 export function randomColor(){
   return \`rgb(\${randomValue()}, \${randomValue()}, \${randomValue()})\`
 }`,
-    'index.html': '<script src="./main.ts" type="module"></script>',
+    'index.html': '<script src="./src/main.ts" type="module"></script>',
+    src: null,
   })
 }
 
@@ -77,10 +91,10 @@ const transformJs: Transform = ({ path, source, executables }) => {
     if (modulePath.startsWith('.')) {
       // Swap relative module-path out with their respective module-url
       const url = executables.get(resolvePath(path, modulePath))
-      console.log('url', url)
-      // if (!url) throw 'url is undefined'
 
-      return url || 'yolo'
+      if (!url) throw 'url is undefined'
+
+      return url
     } else if (isUrl(modulePath)) {
       // Return url directly
       return modulePath
@@ -92,49 +106,62 @@ const transformJs: Transform = ({ path, source, executables }) => {
   })!
 }
 
-const extensions = {
-  css: { type: 'css' },
-  js: {
-    type: 'javascript',
-    transform: transformJs,
-  },
-  ts: {
-    type: 'javascript',
-    transform({ source, ...config }) {
-      return transformJs({
-        ...config,
-        source: ts.transpile(source, typeDownloader.tsconfig()),
-      })
-    },
-  },
-  html: {
-    type: 'html',
-    transform(config) {
-      const html = parseHtml(config)
-        // Transform content of all `<script type="module" />` elements
-        .transformModuleScriptContent(transformJs)
-        // Bind relative `src`-attribute of all `<script/>` elements to FileSystem
-        .bindScriptSrc()
-        // Bind relative `href`-attribute of all `<link/>` elements to FileSystem
-        .bindLinkHref()
-        .toString()
-      return html
-    },
-  },
-} satisfies Record<string, Extension>
+function Handle() {
+  return (
+    <Split.Handle size="0px" class={styles.handle}>
+      <div />
+    </Split.Handle>
+  )
+}
 
 export default function App() {
   let element: HTMLDivElement
 
-  const [currentFile, setCurrentFile] = createSignal('index.html')
+  const [tabs, setTabs] = createSignal<Array<string>>(['index.html'])
+  const [selectedPath, selectPath] = createSignal('index.html')
 
-  const [monaco] = createResource(
-    async () => await (loader as unknown as (typeof loader)['default']).init(),
-  )
+  const [monaco] = createResource(async () => {
+    const monaco = await (loader as unknown as (typeof loader)['default']).init()
+    nightOwl.colors['editor.background'] = '#00000000'
+    monaco.editor.defineTheme('nightOwl', nightOwl)
+    monaco.editor.setTheme('nightOwl')
+    return monaco
+  })
+
+  const isPathSelected = createSelector(selectedPath)
 
   const [doc] = createResource(async () => await handle.doc())
   const fs = createDocumentProjection<Record<string, string | null>>(handle)
-  const executables = createExecutables(fs, extensions)
+  const executables = createExecutables(fs, {
+    css: { type: 'css' },
+    js: {
+      type: 'javascript',
+      transform: transformJs,
+    },
+    ts: {
+      type: 'javascript',
+      transform({ source, ...config }) {
+        return transformJs({
+          ...config,
+          source: ts.transpile(source, typeDownloader.tsconfig()),
+        })
+      },
+    },
+    html: {
+      type: 'html',
+      transform(config) {
+        const html = parseHtml(config)
+          // Transform content of all `<script type="module" />` elements
+          .transformModuleScriptContent(transformJs)
+          // Bind relative `src`-attribute of all `<script/>` elements to FileSystem
+          .bindScriptSrc()
+          // Bind relative `href`-attribute of all `<link/>` elements to FileSystem
+          .bindLinkHref()
+          .toString()
+        return html
+      },
+    },
+  })
 
   createEffect(async () => {
     const _monaco = monaco()
@@ -143,9 +170,10 @@ export default function App() {
     if (!_monaco || !_doc) return
 
     let editor = _monaco.editor.create(element!, {
-      value: _doc?.['index.html'],
+      value: _doc?.['index.html'] || '',
       language: 'typescript',
       automaticLayout: true,
+      fontFamily: 'geist-mono',
     })
 
     createEffect(() =>
@@ -153,29 +181,61 @@ export default function App() {
     )
 
     createEffect(() => {
-      const cleanup = automonaco(_monaco, editor, handle, currentFile())
+      const cleanup = automonaco(_monaco, editor, handle, selectedPath())
       onCleanup(cleanup)
     })
   })
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        height: '100vh',
-        overflow: 'hidden',
-        'grid-template-columns': 'repeat(2, 1fr)',
-      }}
-    >
-      <div style={{ display: 'grid', 'grid-template-rows': 'auto 1fr', overflow: 'hidden' }}>
-        <div>
-          <button onClick={() => setCurrentFile('index.html')}>index.html</button>
-          <button onClick={() => setCurrentFile('main.ts')}>main.ts</button>
-          <button onClick={() => setCurrentFile('math.ts')}>math.ts</button>
+    <Split class={styles.app}>
+      <Split.Pane size="150px" class={styles.explorerPane}>
+        <Explorer
+          fs={fs}
+          onPathSelect={path => {
+            selectPath(path)
+            if (tabs().includes(path)) return
+            console.log('add path', path)
+            setTabs(tabs => [...tabs, path])
+          }}
+          selectedPath={selectedPath()}
+          isPathSelected={isPathSelected}
+          onDirEntCreate={(path, type) => {
+            console.log('type is ', type)
+            handle.change(doc => {
+              doc[path] = type === 'dir' ? null : ''
+            })
+            setTabs(tabs => [...tabs, path])
+            selectPath(path)
+          }}
+        />
+      </Split.Pane>
+      <Handle />
+      <Split.Pane class={styles.editor}>
+        <div class={clsx(styles.tabs, styles.bar)}>
+          <div>
+            <For each={tabs()}>
+              {path => (
+                <span class={clsx(styles.tab, isPathSelected(path) && styles.selected)}>
+                  <button class={styles.hover} onClick={() => selectPath(path)}>
+                    {getName(path)}
+                  </button>
+                  <button
+                    class={styles.hover}
+                    onClick={() => setTabs(tabs => tabs.filter(tab => tab !== path))}
+                  >
+                    <Codicon kind="close" />
+                  </button>
+                </span>
+              )}
+            </For>
+          </div>
         </div>
-        <div ref={element!} style={{ width: '100%', overflow: 'auto' }} />
-      </div>
-      <iframe src={executables.get('index.html')} style={{ height: '100%', width: '100%' }} />
-    </div>
+        <div ref={element!} />
+      </Split.Pane>
+      <Handle />
+      <Split.Pane>
+        <iframe src={executables.get('index.html')} class={styles.frame} />
+      </Split.Pane>
+    </Split>
   )
 }

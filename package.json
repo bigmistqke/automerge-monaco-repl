@@ -26,9 +26,11 @@
     "@bigmistqke/solid-grid-split": "^0.0.2",
     "@monaco-editor/loader": "^1.4.0",
     "automerge-repo-solid-primitives": "2.0.0-beta.5",
+    "clsx": "^2.1.1",
     "dom-serializer": "^2.0.0",
     "domutils": "^3.2.2",
     "htmlparser2": "^10.0.0",
+    "monaco-themes": "^0.4.4",
     "solid-js": "^1.9.3",
     "vite-plugin-wasm": "^3.4.1",
     "vite-tsconfig-paths": "^5.1.4"

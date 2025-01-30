@@ -1,0 +1,14 @@
+@font-face {
+  font-style: normal;
+  font-weight: normal;
+  src: url('./codicon.ttf') format('truetype');
+  font-family: 'codicon';
+}
+
+.codicon {
+  font-family: codicon;
+  &:before {
+    content: var(--codicon);
+    color: inherit;
+  }
+}
