@@ -5,7 +5,6 @@ import { IndexedDBStorageAdapter } from '@automerge/automerge-repo-storage-index
 import {
   createExecutables,
   createMonacoTypeDownloader,
-  getName,
   isUrl,
   Monaco,
   parseHtml,
@@ -14,22 +13,11 @@ import {
   type Transform,
 } from '@bigmistqke/repl'
 import { Split } from '@bigmistqke/solid-grid-split'
-import { default as loader } from '@monaco-editor/loader'
 import { createDocumentProjection } from 'automerge-repo-solid-primitives'
-import clsx from 'clsx'
-import nightOwl from 'monaco-themes/themes/Night Owl.json'
-import {
-  createEffect,
-  createResource,
-  createSelector,
-  createSignal,
-  For,
-  onCleanup,
-} from 'solid-js'
+import { createSelector, createSignal } from 'solid-js'
 import ts from 'typescript'
 import styles from './App.module.css'
-import automonaco from './automonaco.ts'
-import { Codicon } from './codicon/index.tsx'
+import { Editor } from './editor.tsx'
 import { Explorer } from './explorer.tsx'
 
 /**********************************************************************************/
@@ -115,28 +103,21 @@ function Handle() {
 }
 
 export default function App() {
-  let element: HTMLDivElement
-
   const [tabs, setTabs] = createSignal<Array<string>>(['index.html'])
   const [selectedPath, selectPath] = createSignal('index.html')
 
-  function addTab(tab: string) {
-    if (tabs().includes(tab)) return
-    setTabs(tabs => [...tabs, tab])
+  function deleteTab(path: string) {
+    setTabs(tabs => tabs.filter(tab => tab !== path))
   }
-
-  const [monaco] = createResource(async () => {
-    const monaco = await (loader as unknown as (typeof loader)['default']).init()
-    nightOwl.colors['editor.background'] = '#00000000'
-    monaco.editor.defineTheme('nightOwl', nightOwl)
-    monaco.editor.setTheme('nightOwl')
-    return monaco
-  })
+  function addTab(path: string) {
+    if (tabs().includes(path)) return
+    setTabs(tabs => [...tabs, path])
+  }
 
   const isPathSelected = createSelector(selectedPath)
 
-  const [doc] = createResource(async () => await handle.doc())
   const fs = createDocumentProjection<Record<string, string | null>>(handle)
+
   const executables = createExecutables(fs, {
     css: { type: 'css' },
     js: {
@@ -168,42 +149,6 @@ export default function App() {
     },
   })
 
-  createEffect(async () => {
-    const _monaco = monaco()
-    const _doc = doc()
-
-    if (!_monaco || !_doc) return
-
-    let editor = _monaco.editor.create(element!, {
-      value: _doc?.['index.html'] || '',
-      language: 'typescript',
-      automaticLayout: true,
-      fontFamily: 'geist-mono',
-    })
-
-    editor.onMouseDown(event => {
-      const relativePath =
-        event.target.type === 6
-          ? event.target.element?.innerText
-          : event.target.element?.dataset?.href
-
-      if (relativePath && event.event.metaKey) {
-        const path = resolvePath(selectedPath(), relativePath)!
-        addTab(path)
-        selectPath(path)
-      }
-    })
-
-    createEffect(() =>
-      _monaco.languages.typescript.typescriptDefaults.setCompilerOptions(typeDownloader.tsconfig()),
-    )
-
-    createEffect(() => {
-      const cleanup = automonaco(_monaco, editor, handle, selectedPath())
-      onCleanup(cleanup)
-    })
-  })
-
   return (
     <Split class={styles.app}>
       <Split.Pane size="150px" class={styles.explorerPane}>
@@ -216,40 +161,23 @@ export default function App() {
           selectedPath={selectedPath()}
           isPathSelected={isPathSelected}
           onDirEntCreate={(path, type) => {
-            console.log('type is ', type)
-            handle.change(doc => {
-              doc[path] = type === 'dir' ? null : ''
-            })
+            handle.change(doc => (doc[path] = type === 'dir' ? null : ''))
             addTab(path)
             selectPath(path)
           }}
         />
       </Split.Pane>
       <Handle />
-      <Split.Pane class={styles.editor}>
-        <div class={clsx(styles.tabs, styles.bar)}>
-          <For each={tabs()}>
-            {path => (
-              <span class={clsx(styles.tab, isPathSelected(path) && styles.selected, styles.hover)}>
-                <button onClick={() => selectPath(path)}>{getName(path)}</button>
-                <button
-                  class={styles.hover}
-                  onClick={() => {
-                    if (selectedPath() === path) {
-                      const index = tabs().findIndex(tab => tab === path)
-                      selectPath(tabs()[index - 1])
-                    }
-                    setTabs(tabs => tabs.filter(tab => tab !== path))
-                  }}
-                >
-                  <Codicon kind="close" />
-                </button>
-              </span>
-            )}
-          </For>
-        </div>
-        <div ref={element!} class={styles.monaco} />
-      </Split.Pane>
+      <Editor
+        handle={handle}
+        isPathSelected={isPathSelected}
+        onAddTab={addTab}
+        onDeleteTab={deleteTab}
+        onSelectPath={selectPath}
+        selectedPath={selectedPath()}
+        tabs={tabs()}
+        tsconfig={typeDownloader.tsconfig()}
+      />
       <Handle />
       <Split.Pane>
         <iframe src={executables.get('index.html')} class={styles.frame} />

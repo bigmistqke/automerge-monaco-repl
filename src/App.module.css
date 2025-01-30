@@ -18,6 +18,7 @@ body {
     'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
 }
 
 body/* [data-color-mode='dark'] */ {
@@ -57,6 +58,7 @@ button {
   outline: none;
   border: none;
   background-color: transparent;
+  padding: 0px;
   width: 100%;
   color: var(--color-foreground);
 }
@@ -112,6 +114,7 @@ button {
   display: grid;
   grid-template-rows: auto 1fr;
   background: var(--color-editor);
+  overflow: unset !important;
 }
 
 .tabs {
@@ -159,7 +162,6 @@ button {
   display: grid;
   align-content: start;
   background-color: var(--color-explorer);
-  overflow: hidden;
 }
 
 .explorerBar {
@@ -176,6 +178,9 @@ button {
   font-size: 10pt;
   font-family: geist;
   text-align: left;
+  &.cursor {
+    border-right: 1px solid var(--color-foreground);
+  }
 }
 
 .file {

@@ -4,6 +4,7 @@ import {
   batch,
   createEffect,
   createMemo,
+  createSelector,
   createSignal,
   Index,
   onMount,
@@ -23,7 +24,18 @@ export function Explorer(explorerProps: {
   style?: JSX.CSSProperties
   class?: string
 }) {
+  const [cursor, setCursor] = createSignal<string>('index.html')
   const [temporaryDirEnt, setTemporaryDirEnt] = createSignal<'file' | 'dir'>()
+
+  const hasTemporaryDirEnt = createSelector(cursor, (path, cursor) => {
+    if (!temporaryDirEnt()) return false
+    if (explorerProps.fs[cursor] === null) {
+      return path === cursor
+    }
+    return path === getParentPath(cursor)
+  })
+
+  const isCursor = createSelector(cursor)
 
   function TemporaryDirEnt(props: { parentPath: string; layer: number; type: 'file' | 'dir' }) {
     function Input() {
@@ -36,11 +48,10 @@ export function Explorer(explorerProps: {
           onKeyDown={e => {
             if (e.code === 'Enter') {
               batch(() => {
-                explorerProps.onDirEntCreate(
-                  props.parentPath ? `${props.parentPath}/${name()}` : name(),
-                  props.type,
-                )
+                const path = props.parentPath ? `${props.parentPath}/${name()}` : name()
+                explorerProps.onDirEntCreate(path, props.type)
                 setTemporaryDirEnt()
+                setCursor(path)
               })
             }
           }}
@@ -100,11 +111,8 @@ export function Explorer(explorerProps: {
       }
     })
 
-    const hasTemporaryDirEnt = () =>
-      temporaryDirEnt() && getParentPath(explorerProps.selectedPath) === props.path
-
     createEffect(() => {
-      if (hasTemporaryDirEnt()) {
+      if (hasTemporaryDirEnt(props.path)) {
         setCollapsed(false)
       }
     })
@@ -113,8 +121,16 @@ export function Explorer(explorerProps: {
       <>
         <Show when={props.path}>
           <button
-            onClick={() => setCollapsed(collapsed => !collapsed)}
-            class={clsx(styles.dirEnt, styles.dir, styles.hover)}
+            onClick={() => {
+              setCollapsed(collapsed => !collapsed)
+              setCursor(props.path)
+            }}
+            class={clsx(
+              styles.dirEnt,
+              styles.dir,
+              styles.hover,
+              isCursor(props.path) && styles.cursor,
+            )}
             style={{
               '--layer': props.layer - 1,
             }}
@@ -130,7 +146,7 @@ export function Explorer(explorerProps: {
 
         <Show when={!collapsed()}>
           <Index each={dirEnts().dirs}>{dir => <Dir layer={props.layer + 1} path={dir()} />}</Index>
-          <Show when={hasTemporaryDirEnt()}>
+          <Show when={hasTemporaryDirEnt(props.path)}>
             <TemporaryDirEnt
               parentPath={props.path}
               layer={props.layer}
@@ -146,12 +162,15 @@ export function Explorer(explorerProps: {
   function File(props: { layer: number; path: string }) {
     return (
       <button
-        class={clsx(styles.dir, styles.file, styles.hover)}
+        class={clsx(styles.dir, styles.file, styles.hover, isCursor(props.path) && styles.cursor)}
         style={{
           'padding-left': `calc(${props.layer} * 10px + var(--margin))`,
           'text-decoration': explorerProps.isPathSelected(props.path) ? 'underline' : 'none',
         }}
-        onClick={() => explorerProps.onPathSelect(props.path)}
+        onClick={() => {
+          explorerProps.onPathSelect(props.path)
+          setCursor(props.path)
+        }}
       >
         {getName(props.path)}
       </button>
