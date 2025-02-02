@@ -17,9 +17,10 @@ import { createDocumentProjection } from 'automerge-repo-solid-primitives'
 import clsx from 'clsx'
 import { languages } from 'monaco-editor'
 import nightOwl from 'monaco-themes/themes/Night Owl.json'
-import { createEffect, createSelector, createSignal, For } from 'solid-js'
+import { createEffect, createMemo, createSelector, createSignal, For } from 'solid-js'
 import ts from 'typescript'
 import styles from './App.module.css'
+import { escape, unescape } from './automonaco.ts'
 import { Codicon } from './codicon/index.tsx'
 import { Editor } from './editor.tsx'
 import { Explorer } from './explorer.tsx'
@@ -44,7 +45,7 @@ if (isValidAutomergeUrl(rootDocUrl)) {
   handle = repo.find<Record<string, string | null>>(rootDocUrl)
 } else {
   handle = repo.create<Record<string, string | null>>({
-    'src/main.ts': `import { randomColor } from "./math.ts"
+    [escape('src/main.ts')]: `import { randomColor } from "./math.ts"
     
 function randomBodyColor(){
   document.body.style.background = randomColor()
@@ -52,7 +53,7 @@ function randomBodyColor(){
 
 requestAnimationFrame(randomBodyColor)
 setInterval(randomBodyColor, 2000)`,
-    'src/math.ts': `export function randomValue(){
+    [escape('src/math.ts')]: `export function randomValue(){
   return 200 + Math.random() * 50
 }
     
@@ -120,7 +121,10 @@ export default function App() {
 
   const isPathSelected = createSelector(selectedPath)
 
-  const fs = createDocumentProjection<Record<string, string | null>>(handle)
+  const unescapedFs = createDocumentProjection<Record<string, string | null>>(handle)
+  const fs = createMemo(() =>
+    Object.fromEntries(Object.entries(unescapedFs).map(([key, value]) => [unescape(key), value])),
+  )
 
   const executables = createExecutables(fs, {
     css: { type: 'css' },
@@ -157,7 +161,7 @@ export default function App() {
     <Split class={styles.app}>
       <Split.Pane size="150px" class={styles.explorerPane}>
         <Explorer
-          fs={fs}
+          fs={fs()}
           onPathSelect={path => {
             selectPath(path)
             addTab(path)

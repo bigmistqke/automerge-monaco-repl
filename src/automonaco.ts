@@ -8,6 +8,13 @@ import {
 import { Monaco } from '@monaco-editor/loader'
 import type { editor } from 'monaco-editor/esm/vs/editor/editor.api.d.ts'
 
+export function escape(path: string) {
+  return path.replaceAll('/', '--')
+}
+export function unescape(path: string) {
+  return path.replaceAll('--', '/')
+}
+
 export default function automonaco(
   monaco: Monaco,
   editor: editor.IStandaloneCodeEditor,
@@ -18,7 +25,11 @@ export default function automonaco(
     return monaco.Uri.parse(`file:///${path}`)
   }
   function createModel(path: string) {
-    return monaco.editor.createModel(handle.docSync()?.[path] || '', undefined, getUri(path))
+    return monaco.editor.createModel(
+      handle.docSync()?.[escape(path)] || '',
+      undefined,
+      getUri(path),
+    )
   }
   function getModel(path: string) {
     return monaco.editor.getModel(getUri(path))
@@ -27,7 +38,7 @@ export default function automonaco(
     const uri = getUri(path)
     return (
       monaco.editor.getModel(uri) ||
-      monaco.editor.createModel(handle.docSync()?.[path] || '', undefined, uri)
+      monaco.editor.createModel(handle.docSync()?.[escape(path)] || '', undefined, uri)
     )
   }
 
@@ -44,7 +55,7 @@ export default function automonaco(
     handle.change(doc => {
       for (let change of event.changes) {
         let { rangeOffset, rangeLength, text } = change
-        splice(doc as Doc<unknown>, [path], rangeOffset, rangeLength, text)
+        splice(doc as Doc<unknown>, [escape(path)], rangeOffset, rangeLength, text)
       }
     })
     sending = false
@@ -59,7 +70,7 @@ export default function automonaco(
     const patchesMap: Record<string, Array<Patch>> = {}
 
     for (const patch of payload.patches) {
-      const path = patch.path[patch.path.length - 2]
+      const path = unescape(patch.path[patch.path.length - 2])
       if (patchesMap[path] === undefined) {
         patchesMap[path] = []
       }
@@ -67,7 +78,7 @@ export default function automonaco(
     }
 
     for (const [path, patches] of Object.entries(patchesMap)) {
-      const model = getModel(path)
+      const model = getModel(unescape(path))
       if (model) {
         model.applyEdits(
           patches.map(patch => {
@@ -91,7 +102,7 @@ export default function automonaco(
           }),
         )
       } else {
-        createModel(path)
+        createModel(unescape(path))
       }
     }
 
