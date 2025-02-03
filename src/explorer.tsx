@@ -17,9 +17,11 @@ import { CodiconButton } from './components.tsx'
 
 export function Explorer(explorerProps: {
   fs: Record<string, string | null>
-  isPathSelected: (path: string) => boolean
-  onPathSelect: (path: string) => void
-  onDirEntCreate: (path: string, type: 'dir' | 'file') => void
+  isPathSelected(path: string): boolean
+  onPathSelect(path: string): void
+  onDirEntCreate(path: string, type: 'dir' | 'file'): void
+  onDirEntRename(currentPath: string, newPath: string): void
+  onDirEntDelete(path: string): void
   selectedPath: string
   style?: JSX.CSSProperties
   class?: string
@@ -37,38 +39,28 @@ export function Explorer(explorerProps: {
 
   const isCursor = createSelector(cursor)
 
+  function Input(props: {
+    onSubmit(name: string): void
+    initialValue?: string
+    onBlur(event: FocusEvent): void
+  }) {
+    const [name, setName] = createSignal(props.initialValue || '')
+    return (
+      <input
+        ref={element => onMount(() => element.focus())}
+        class={styles.input}
+        onBlur={props.onBlur}
+        onKeyDown={e => {
+          if (e.code === 'Enter') {
+            props.onSubmit(name())
+          }
+        }}
+        onInput={e => setName(e.currentTarget.value)}
+        value={name()}
+      />
+    )
+  }
   function TemporaryDirEnt(props: { parentPath: string; layer: number; type: 'file' | 'dir' }) {
-    function Input() {
-      const [name, setName] = createSignal('')
-      return (
-        <input
-          ref={element => onMount(() => element.focus())}
-          class={styles.input}
-          onBlur={e => {
-            if (
-              e.relatedTarget instanceof HTMLElement &&
-              e.relatedTarget.getAttribute('data-blur-block')
-            ) {
-              return
-            }
-            setTemporaryDirEnt()
-          }}
-          onKeyDown={e => {
-            if (e.code === 'Enter') {
-              batch(() => {
-                const path = props.parentPath ? `${props.parentPath}/${name()}` : name()
-                explorerProps.onDirEntCreate(path, props.type)
-                setTemporaryDirEnt()
-                setCursor(path)
-              })
-            }
-          }}
-          onInput={e => setName(e.currentTarget.value)}
-          value={name()}
-        />
-      )
-    }
-
     return (
       <div
         class={clsx(styles.dirEnt, styles.cursor, props.type === 'dir' ? styles.dir : styles.file)}
@@ -79,12 +71,33 @@ export function Explorer(explorerProps: {
         <Show when={props.type === 'dir'}>
           <Codicon kind="chevron-right" />
         </Show>
-        <Input />
+        <Input
+          onBlur={e => {
+            if (
+              e.relatedTarget instanceof HTMLElement &&
+              e.relatedTarget.getAttribute('data-blur-block')
+            ) {
+              return
+            }
+            setTemporaryDirEnt()
+          }}
+          onSubmit={name => {
+            batch(() => {
+              const path = props.parentPath ? `${props.parentPath}/${name}` : name
+              explorerProps.onDirEntCreate(path, props.type)
+              setTemporaryDirEnt()
+              setCursor(path)
+            })
+          }}
+        />
       </div>
     )
   }
 
+  createEffect(() => console.log('explorerProps.fs', Object.keys(explorerProps.fs)))
+
   function Dir(props: { layer: number; path: string }) {
+    const [editable, setEditable] = createSignal(false)
     const [collapsed, setCollapsed] = createSignal(false)
 
     const dirEnts = createMemo(() => {
@@ -122,6 +135,7 @@ export function Explorer(explorerProps: {
               setCollapsed(collapsed => !collapsed)
               setCursor(props.path)
             }}
+            onDblClick={() => setEditable(true)}
             class={clsx(
               styles.dirEnt,
               styles.dir,
@@ -137,10 +151,18 @@ export function Explorer(explorerProps: {
               as="span"
               kind={collapsed() ? 'chevron-right' : 'chevron-down'}
             />
-            <span>{getName(props.path)}</span>
+            <Show when={editable()} fallback={<span>{getName(props.path)}</span>}>
+              <Input
+                initialValue={getName(props.path)}
+                onSubmit={name => {
+                  explorerProps.onDirEntRename(props.path, `${getParentPath(props.path)}/${name}`)
+                  setEditable(false)
+                }}
+                onBlur={() => setEditable(false)}
+              />
+            </Show>
           </button>
         </Show>
-
         <Show when={!collapsed()}>
           <Show when={temporaryDirEnt() === 'dir' && hasTemporaryDirEnt(props.path)}>
             <TemporaryDirEnt
@@ -164,25 +186,42 @@ export function Explorer(explorerProps: {
   }
 
   function File(props: { layer: number; path: string }) {
+    const [editable, setEditable] = createSignal(false)
+
     return (
-      <button
-        class={clsx(
-          styles.dir,
-          styles.file,
-          styles.hover,
-          !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
-        )}
-        style={{
-          'padding-left': `calc(${props.layer} * 10px + var(--margin))`,
-          'text-decoration': explorerProps.isPathSelected(props.path) ? 'underline' : 'none',
-        }}
-        onClick={() => {
-          explorerProps.onPathSelect(props.path)
-          setCursor(props.path)
-        }}
+      <Show
+        when={editable()}
+        fallback={
+          <button
+            class={clsx(
+              styles.dir,
+              styles.file,
+              styles.hover,
+              !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
+            )}
+            style={{
+              'padding-left': `calc(${props.layer} * 10px + var(--margin))`,
+              'text-decoration': explorerProps.isPathSelected(props.path) ? 'underline' : 'none',
+            }}
+            onDblClick={() => setEditable(true)}
+            onClick={() => {
+              explorerProps.onPathSelect(props.path)
+              setCursor(props.path)
+            }}
+          >
+            {getName(props.path)}
+          </button>
+        }
       >
-        {getName(props.path)}
-      </button>
+        <Input
+          initialValue={getName(props.path)}
+          onSubmit={name => {
+            explorerProps.onDirEntRename(props.path, `${getParentPath(props.path)}/${name}`)
+            setEditable(false)
+          }}
+          onBlur={() => setEditable(false)}
+        />
+      </Show>
     )
   }
 

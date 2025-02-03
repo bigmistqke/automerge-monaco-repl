@@ -6,17 +6,17 @@ settings:
 
 dependencies:
   '@automerge/automerge-repo':
-    specifier: ^1.2.1
-    version: 1.2.1(@types/node@22.10.10)(typescript@5.7.3)
+    specifier: 2.0.0-alpha.22
+    version: 2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3)
   '@automerge/automerge-repo-network-broadcastchannel':
-    specifier: ^1.2.1
-    version: 1.2.1(@types/node@22.10.10)(typescript@5.7.3)
+    specifier: 2.0.0-alpha.22
+    version: 2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3)
   '@automerge/automerge-repo-network-websocket':
-    specifier: ^1.2.1
-    version: 1.2.1(@types/node@22.10.10)(typescript@5.7.3)
+    specifier: 2.0.0-alpha.22
+    version: 2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3)
   '@automerge/automerge-repo-storage-indexeddb':
-    specifier: ^1.2.1
-    version: 1.2.1(@types/node@22.10.10)(typescript@5.7.3)
+    specifier: 2.0.0-alpha.22
+    version: 2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3)
   '@bigmistqke/solid-grid-split':
     specifier: ^0.0.2
     version: 0.0.2(solid-js@1.9.4)
@@ -24,8 +24,8 @@ dependencies:
     specifier: ^1.4.0
     version: 1.4.0(monaco-editor@0.52.2)
   automerge-repo-solid-primitives:
-    specifier: 2.0.0-beta.5
-    version: 2.0.0-beta.5(solid-js@1.9.4)
+    specifier: 2.0.0-beta.12
+    version: 2.0.0-beta.12(@automerge/automerge-repo@2.0.0-alpha.22)(solid-js@1.9.4)
   clsx:
     specifier: ^2.1.1
     version: 2.1.1
@@ -78,10 +78,10 @@ packages:
       '@jridgewell/trace-mapping': 0.3.25
     dev: true
 
-  /@automerge/automerge-repo-network-broadcastchannel@1.2.1(@types/node@22.10.10)(typescript@5.7.3):
-    resolution: {integrity: sha512-Jm3NiuFe/+3aHpHhRYEYOchkMkavMw7+ysNKqYgC7zyGM8jtBowJhxmD4awvz+I5dWNA64KNJIt4k7h295HPAQ==}
+  /@automerge/automerge-repo-network-broadcastchannel@2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3):
+    resolution: {integrity: sha512-TK0oDb9QJiyDpmT09wZOQqUs9pF1LPFftIie5C+PKS+MnDWrKimzru6GXUoaU9mpsNpT2EnbNl6HfMd+FARAjA==}
     dependencies:
-      '@automerge/automerge-repo': 1.2.1(@types/node@22.10.10)(typescript@5.7.3)
+      '@automerge/automerge-repo': 2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3)
     transitivePeerDependencies:
       - '@swc/core'
       - '@swc/wasm'
@@ -90,10 +90,10 @@ packages:
       - typescript
     dev: false
 
-  /@automerge/automerge-repo-network-websocket@1.2.1(@types/node@22.10.10)(typescript@5.7.3):
-    resolution: {integrity: sha512-n4sI6l51iBf0edWtX+vhk+sc8wJL72IVZl682SvzRHakA5CzyNZiC8sVzc142zRT3RDN12jCWGpwA2Voq6EXsQ==}
+  /@automerge/automerge-repo-network-websocket@2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3):
+    resolution: {integrity: sha512-yn78IFSR79osO98ypH1FYVjv4e+anMweVVpvJE/S5AtqBICyzBb+fjm2vlLih3+J+03QCt+U2J0CpsIG1qpf9Q==}
     dependencies:
-      '@automerge/automerge-repo': 1.2.1(@types/node@22.10.10)(typescript@5.7.3)
+      '@automerge/automerge-repo': 2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3)
       cbor-x: 1.6.0
       debug: 4.4.0
       eventemitter3: 5.0.1
@@ -109,10 +109,10 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@automerge/automerge-repo-storage-indexeddb@1.2.1(@types/node@22.10.10)(typescript@5.7.3):
-    resolution: {integrity: sha512-u+9eZZJK7DAr541buF4ut1ipkuiKRoaAtoFYo/ilq7zOLO7JX+GQOFx/8eKKRDlGt/AHTcDaFktkcaX0vKahQQ==}
+  /@automerge/automerge-repo-storage-indexeddb@2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3):
+    resolution: {integrity: sha512-2xRc4xx/iHZo/EPkbtEEImBKvZHhiC+yEy4JKBYc13VnxkLPbzpcT5/jL+NrdcMrEBMt3OzumVZtARYWhL4u0A==}
     dependencies:
-      '@automerge/automerge-repo': 1.2.1(@types/node@22.10.10)(typescript@5.7.3)
+      '@automerge/automerge-repo': 2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3)
     transitivePeerDependencies:
       - '@swc/core'
       - '@swc/wasm'
@@ -121,8 +121,8 @@ packages:
       - typescript
     dev: false
 
-  /@automerge/automerge-repo@1.2.1(@types/node@22.10.10)(typescript@5.7.3):
-    resolution: {integrity: sha512-uEBr4bM01aSWkEt2tDKQxfW0Pahz2zbTTn4sRJfeKJlAg2SLr4QepFJ+3Tp4CNEkkU485olfnKYf6gt7uilMZQ==}
+  /@automerge/automerge-repo@2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3):
+    resolution: {integrity: sha512-OtvqNPEsL3iLNV3mFANKVXMjSTjZwHQ4b52MphQhIursUkJglxf251wy6Y6b10uY5GJks/abNIz8KUXasRPwxw==}
     dependencies:
       '@automerge/automerge': 2.2.8
       bs58check: 3.0.1
@@ -840,11 +840,13 @@ packages:
     resolution: {integrity: sha512-58S9QDqG0Xx27YwPSt9fJxivjYl432YCwfDMfZ+71RAqUrZef7LrKQZ3LHLOwCS4FLNBplP533Zx895SeOCHvA==}
     dev: false
 
-  /automerge-repo-solid-primitives@2.0.0-beta.5(solid-js@1.9.4):
-    resolution: {integrity: sha512-ULsXh0x42+FB2j6sTIL4R3EKQ/ugzHvKk+3QsRZdrqqnjOaBIHavnbspXrDnAoL+zzEK156PZv4jfI25FQsHoQ==}
+  /automerge-repo-solid-primitives@2.0.0-beta.12(@automerge/automerge-repo@2.0.0-alpha.22)(solid-js@1.9.4):
+    resolution: {integrity: sha512-kgbyzZoU9/rJo5nXEliqDcB8PTM7qepbVP+Xf8lLWchRQKVpr3MSbDrf/8z17u/WPvgMyszXa2M7l/1neQLZwg==}
     peerDependencies:
-      solid-js: ^1.8.19
+      '@automerge/automerge-repo': 2.0.0-alpha.22
+      solid-js: ^1.9.4
     dependencies:
+      '@automerge/automerge-repo': 2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3)
       '@solid-primitives/utils': 6.3.0(solid-js@1.9.4)
       cabbages: 0.1.0
       solid-js: 1.9.4

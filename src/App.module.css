@@ -163,10 +163,6 @@ button {
   background: var(--color-editor);
 }
 
-.app:not(.resizing) .editor {
-  overflow: unset !important;
-}
-
 .monaco > :global(.monaco-editor) {
   outline: none !important;
 }

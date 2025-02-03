@@ -25,11 +25,7 @@ export default function automonaco(
     return monaco.Uri.parse(`file:///${path}`)
   }
   function createModel(path: string) {
-    return monaco.editor.createModel(
-      handle.docSync()?.[escape(path)] || '',
-      undefined,
-      getUri(path),
-    )
+    return monaco.editor.createModel(handle.doc()?.[escape(path)] || '', undefined, getUri(path))
   }
   function getModel(path: string) {
     return monaco.editor.getModel(getUri(path))
@@ -38,7 +34,7 @@ export default function automonaco(
     const uri = getUri(path)
     return (
       monaco.editor.getModel(uri) ||
-      monaco.editor.createModel(handle.docSync()?.[escape(path)] || '', undefined, uri)
+      monaco.editor.createModel(handle.doc()?.[escape(path)] || '', undefined, uri)
     )
   }
 
@@ -55,6 +51,7 @@ export default function automonaco(
     handle.change(doc => {
       for (let change of event.changes) {
         let { rangeOffset, rangeLength, text } = change
+        console.log('LOCAL CHANGES', path)
         splice(doc as Doc<unknown>, [escape(path)], rangeOffset, rangeLength, text)
       }
     })
@@ -70,7 +67,20 @@ export default function automonaco(
     const patchesMap: Record<string, Array<Patch>> = {}
 
     for (const patch of payload.patches) {
-      const path = unescape(patch.path[patch.path.length - 2])
+      if (!patch.path) {
+        console.error('path is undefined', [...patch.path])
+        return
+      }
+
+      let [path] = patch.path
+
+      if (typeof path !== 'string') {
+        console.error('path is not a string', path, [...patch.path])
+        return
+      }
+
+      path = escape(path)
+
       if (patchesMap[path] === undefined) {
         patchesMap[path] = []
       }
@@ -113,7 +123,7 @@ export default function automonaco(
   handle.on('change', onRemoteChange)
 
   // Initialize all models
-  Object.keys(handle.docSync() || {}).forEach(getOrCreateModel)
+  Object.keys(handle.doc() || {}).forEach(getOrCreateModel)
 
   return () => {
     localChangeHandler.dispose()
