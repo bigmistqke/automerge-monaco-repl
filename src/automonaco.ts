@@ -91,25 +91,25 @@ export default function automonaco(
       const model = getModel(unescape(path))
       if (model) {
         model.applyEdits(
-          patches.map(patch => {
-            if (!['del', 'splice'].includes(patch.action)) {
-              throw new Error('Unexpected action for text editor: ' + patch.action)
-            }
-            let startOffset = patch.path[patch.path.length - 1] as number
-            let endOffset = patch.action == 'del' ? startOffset + (patch.length ?? 1) : startOffset
+          patches
+            .filter(patch => ['del', 'splice'].includes(patch.action))
+            .map(patch => {
+              let startOffset = patch.path[patch.path.length - 1] as number
+              let endOffset =
+                patch.action == 'del' ? startOffset + (patch.length ?? 1) : startOffset
 
-            let startPosition = model.getPositionAt(startOffset)!
-            let endPosition = model.getPositionAt(endOffset)!
-            return {
-              range: {
-                startColumn: startPosition?.column,
-                startLineNumber: startPosition?.lineNumber,
-                endColumn: endPosition?.column,
-                endLineNumber: endPosition?.lineNumber,
-              },
-              text: patch.action == 'splice' ? patch.value : '',
-            }
-          }),
+              let startPosition = model.getPositionAt(startOffset)!
+              let endPosition = model.getPositionAt(endOffset)!
+              return {
+                range: {
+                  startColumn: startPosition?.column,
+                  startLineNumber: startPosition?.lineNumber,
+                  endColumn: endPosition?.column,
+                  endLineNumber: endPosition?.lineNumber,
+                },
+                text: patch.action == 'splice' ? patch.value : '',
+              }
+            }),
         )
       } else {
         createModel(unescape(path))
