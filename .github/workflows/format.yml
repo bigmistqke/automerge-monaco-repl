@@ -20,16 +20,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
 
       # "git restore ." discards changes to package-lock.json
       - name: Install dependencies
         run: |
-          pnpm install --no-frozen-lockfile --ignore-scripts
+          npm install --no-frozen-lockfile --ignore-scripts
           git restore .
 
       - name: Format
-        run: pnpm run format
+        run: npm run format
 
       - name: Add, Commit and Push
         uses: stefanzweifel/git-auto-commit-action@v4
