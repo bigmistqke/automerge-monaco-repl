@@ -1,4 +1,5 @@
 import { getName, getParentPath } from '@bigmistqke/repl'
+import { ContextMenu } from '@kobalte/core/context-menu'
 import clsx from 'clsx'
 import {
   batch,
@@ -8,12 +9,66 @@ import {
   createSignal,
   Index,
   onMount,
+  ParentProps,
   Show,
   type JSX,
 } from 'solid-js'
 import styles from './App.module.css'
 import { Codicon } from './codicon/index.tsx'
 import { CodiconButton } from './components.tsx'
+
+function DirEntContextMenu(
+  props: ParentProps<{ path: string; onEditable(): void; onDelete(): void }>,
+) {
+  return (
+    <ContextMenu>
+      <ContextMenu.Trigger>{props.children}</ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content class={styles.contextMenu}>
+          <ContextMenu.Item class={styles.contextMenuItem} onClick={() => props.onEditable()}>
+            Rename
+          </ContextMenu.Item>
+          <ContextMenu.Item class={styles.contextMenuItem} onClick={() => props.onDelete()}>
+            Delete
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu>
+  )
+}
+
+function Input(props: {
+  class?: string
+  initialValue?: string
+  onBlur(event: FocusEvent): void
+  onSubmit(name: string): void
+  style?: JSX.CSSProperties
+}) {
+  const [name, setName] = createSignal(props.initialValue || '')
+  return (
+    <input
+      ref={element =>
+        onMount(() => {
+          setTimeout(() => {
+            element.focus()
+            element.select()
+          }, 0)
+        })
+      }
+      value={name()}
+      class={clsx(styles.input, props.class)}
+      style={props.style}
+      spellcheck={false}
+      onBlur={props.onBlur}
+      onKeyDown={e => {
+        if (e.code === 'Enter') {
+          props.onSubmit(name())
+        }
+      }}
+      onInput={e => setName(e.currentTarget.value)}
+    />
+  )
+}
 
 export function Explorer(explorerProps: {
   fs: Record<string, string | null>
@@ -39,27 +94,6 @@ export function Explorer(explorerProps: {
 
   const isCursor = createSelector(cursor)
 
-  function Input(props: {
-    onSubmit(name: string): void
-    initialValue?: string
-    onBlur(event: FocusEvent): void
-  }) {
-    const [name, setName] = createSignal(props.initialValue || '')
-    return (
-      <input
-        ref={element => onMount(() => element.focus())}
-        class={styles.input}
-        onBlur={props.onBlur}
-        onKeyDown={e => {
-          if (e.code === 'Enter') {
-            props.onSubmit(name())
-          }
-        }}
-        onInput={e => setName(e.currentTarget.value)}
-        value={name()}
-      />
-    )
-  }
   function TemporaryDirEnt(props: { parentPath: string; layer: number; type: 'file' | 'dir' }) {
     return (
       <div
@@ -130,38 +164,43 @@ export function Explorer(explorerProps: {
     return (
       <>
         <Show when={props.path}>
-          <button
-            onClick={() => {
-              setCollapsed(collapsed => !collapsed)
-              setCursor(props.path)
-            }}
-            onDblClick={() => setEditable(true)}
-            class={clsx(
-              styles.dirEnt,
-              styles.dir,
-              styles.hover,
-              !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
-            )}
-            style={{
-              '--layer': props.layer - 1,
-            }}
+          <DirEntContextMenu
+            path={props.path}
+            onEditable={() => setEditable(true)}
+            onDelete={() => explorerProps.onDirEntDelete(props.path)}
           >
-            <Codicon
-              style={{ width: `var(--explorer-layer-offset)` }}
-              as="span"
-              kind={collapsed() ? 'chevron-right' : 'chevron-down'}
-            />
-            <Show when={editable()} fallback={<span>{getName(props.path)}</span>}>
-              <Input
-                initialValue={getName(props.path)}
-                onSubmit={name => {
-                  explorerProps.onDirEntRename(props.path, `${getParentPath(props.path)}/${name}`)
-                  setEditable(false)
-                }}
-                onBlur={() => setEditable(false)}
+            <button
+              onClick={() => {
+                setCollapsed(collapsed => !collapsed)
+                setCursor(props.path)
+              }}
+              class={clsx(
+                styles.dirEnt,
+                styles.dir,
+                styles.hover,
+                !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
+              )}
+              style={{
+                '--layer': props.layer - 1,
+              }}
+            >
+              <Codicon
+                style={{ width: `var(--explorer-layer-offset)` }}
+                as="span"
+                kind={collapsed() ? 'chevron-right' : 'chevron-down'}
               />
-            </Show>
-          </button>
+              <Show when={editable()} fallback={<span>{getName(props.path)}</span>}>
+                <Input
+                  initialValue={getName(props.path)}
+                  onSubmit={name => {
+                    explorerProps.onDirEntRename(props.path, `${getParentPath(props.path)}/${name}`)
+                    setEditable(false)
+                  }}
+                  onBlur={() => setEditable(false)}
+                />
+              </Show>
+            </button>
+          </DirEntContextMenu>
         </Show>
         <Show when={!collapsed()}>
           <Show when={temporaryDirEnt() === 'dir' && hasTemporaryDirEnt(props.path)}>
@@ -192,28 +231,43 @@ export function Explorer(explorerProps: {
       <Show
         when={editable()}
         fallback={
-          <button
-            class={clsx(
-              styles.dir,
-              styles.file,
-              styles.hover,
-              !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
-            )}
-            style={{
-              'padding-left': `calc(${props.layer} * 10px + var(--margin))`,
-              'text-decoration': explorerProps.isPathSelected(props.path) ? 'underline' : 'none',
-            }}
-            onDblClick={() => setEditable(true)}
-            onClick={() => {
-              explorerProps.onPathSelect(props.path)
-              setCursor(props.path)
-            }}
+          <DirEntContextMenu
+            path={props.path}
+            onEditable={() => setEditable(true)}
+            onDelete={() => explorerProps.onDirEntDelete(props.path)}
           >
-            {getName(props.path)}
-          </button>
+            <button
+              class={clsx(
+                styles.dir,
+                styles.file,
+                styles.hover,
+                !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
+              )}
+              style={{
+                'padding-left': `calc(${props.layer} * 10px + var(--margin))`,
+                'text-decoration': explorerProps.isPathSelected(props.path) ? 'underline' : 'none',
+              }}
+              onClick={() => {
+                explorerProps.onPathSelect(props.path)
+                setCursor(props.path)
+              }}
+            >
+              {getName(props.path)}
+            </button>
+          </DirEntContextMenu>
         }
       >
         <Input
+          class={clsx(
+            styles.dir,
+            styles.file,
+            styles.hover,
+            !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
+          )}
+          style={{
+            'padding-left': `calc(${props.layer} * 10px + var(--margin))`,
+            'text-decoration': explorerProps.isPathSelected(props.path) ? 'underline' : 'none',
+          }}
           initialValue={getName(props.path)}
           onSubmit={name => {
             explorerProps.onDirEntRename(props.path, `${getParentPath(props.path)}/${name}`)

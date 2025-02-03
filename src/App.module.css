@@ -66,6 +66,7 @@ button {
   padding: 0px;
   width: 100%;
   color: var(--color-foreground);
+  font-family: geist;
 }
 
 .app {
@@ -190,6 +191,7 @@ button {
   border: none;
   background: transparent;
   padding-right: 0px;
+  width: 100%;
   height: var(--margin);
   color: var(--color-foreground);
   font-size: 10pt;
@@ -217,6 +219,24 @@ button {
 
 .cursor {
   border-right: 1px solid var(--color-foreground);
+}
+
+.contextMenu {
+  gap: 5px;
+  border: 1px solid var(--color-foreground-inactive);
+  border-radius: 5px;
+  background: var(--color-editor);
+  color: var(--color-foreground);
+  font-size: 10pt;
+}
+
+.contextMenuItem {
+  display: flex;
+  cursor: pointer;
+  padding: 5px;
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 [data-active-pane] {

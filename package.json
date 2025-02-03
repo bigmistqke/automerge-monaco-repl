@@ -24,6 +24,7 @@
     "@automerge/automerge-repo-network-websocket": "2.0.0-alpha.22",
     "@automerge/automerge-repo-storage-indexeddb": "2.0.0-alpha.22",
     "@bigmistqke/solid-grid-split": "^0.0.2",
+    "@kobalte/core": "^0.13.7",
     "@monaco-editor/loader": "^1.4.0",
     "automerge-repo-solid-primitives": "2.0.0-beta.12",
     "clsx": "^2.1.1",
