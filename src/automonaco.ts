@@ -89,7 +89,15 @@ export default function automonaco(
 
     for (const [path, patches] of Object.entries(patchesMap)) {
       const model = getModel(unescape(path))
+
       if (model) {
+        // Delete the path from the filesystem
+        console.log(patches.find(patch => patch.action === 'del'))
+        if (patches.find(patch => patch.action === 'del' && patch.path.length === 1)) {
+          model.dispose()
+          return
+        }
+
         model.applyEdits(
           patches
             .filter(patch => ['del', 'splice'].includes(patch.action))
