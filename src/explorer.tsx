@@ -17,7 +17,7 @@ import styles from './App.module.css'
 import { Codicon } from './codicon/index.tsx'
 import { CodiconButton } from './components.tsx'
 
-function DirEntContextMenu(
+function EntryContextMenu(
   props: ParentProps<{ path: string; onEditable(): void; onDelete(): void }>,
 ) {
   return (
@@ -74,19 +74,20 @@ export function Explorer(explorerProps: {
   fs: Record<string, string | null>
   isPathSelected(path: string): boolean
   onPathSelect(path: string): void
-  onClone(): void
-  onDirEntCreate(path: string, type: 'dir' | 'file'): void
-  onDirEntRename(currentPath: string, newPath: string): void
-  onDirEntDelete(path: string): void
+  onRepoCreate(): void
+  onRepoFork(): void
+  onEntryCreate(path: string, type: 'dir' | 'file'): void
+  onEntryRename(currentPath: string, newPath: string): void
+  onEntryDelete(path: string): void
   selectedPath: string
   style?: JSX.CSSProperties
   class?: string
 }) {
   const [cursor, setCursor] = createSignal<string>('index.html')
-  const [temporaryDirEnt, setTemporaryDirEnt] = createSignal<'file' | 'dir'>()
+  const [temporaryEntry, setTemporaryEntry] = createSignal<'file' | 'dir'>()
 
-  const hasTemporaryDirEnt = createSelector(cursor, (path, cursor) => {
-    if (!temporaryDirEnt()) return false
+  const hasTemporaryEntry = createSelector(cursor, (path, cursor) => {
+    if (!temporaryEntry()) return false
     if (explorerProps.fs[cursor] === null) {
       return path === cursor
     }
@@ -95,7 +96,7 @@ export function Explorer(explorerProps: {
 
   const isCursor = createSelector(cursor)
 
-  function TemporaryDirEnt(props: { parentPath: string; layer: number; type: 'file' | 'dir' }) {
+  function TemporaryEntry(props: { parentPath: string; layer: number; type: 'file' | 'dir' }) {
     return (
       <div
         class={clsx(styles.dirEnt, styles.cursor, props.type === 'dir' ? styles.dir : styles.file)}
@@ -114,13 +115,13 @@ export function Explorer(explorerProps: {
             ) {
               return
             }
-            setTemporaryDirEnt()
+            setTemporaryEntry()
           }}
           onSubmit={name => {
             batch(() => {
               const path = props.parentPath ? `${props.parentPath}/${name}` : name
-              explorerProps.onDirEntCreate(path, props.type)
-              setTemporaryDirEnt()
+              explorerProps.onEntryCreate(path, props.type)
+              setTemporaryEntry()
               setCursor(path)
             })
           }}
@@ -135,7 +136,7 @@ export function Explorer(explorerProps: {
     const [editable, setEditable] = createSignal(false)
     const [collapsed, setCollapsed] = createSignal(false)
 
-    const dirEnts = createMemo(() => {
+    const entries = createMemo(() => {
       const files = new Array<string>()
       const dirs = new Array<string>()
 
@@ -157,7 +158,7 @@ export function Explorer(explorerProps: {
     })
 
     createEffect(() => {
-      if (hasTemporaryDirEnt(props.path)) {
+      if (hasTemporaryEntry(props.path)) {
         setCollapsed(false)
       }
     })
@@ -165,10 +166,10 @@ export function Explorer(explorerProps: {
     return (
       <>
         <Show when={props.path}>
-          <DirEntContextMenu
+          <EntryContextMenu
             path={props.path}
             onEditable={() => setEditable(true)}
-            onDelete={() => explorerProps.onDirEntDelete(props.path)}
+            onDelete={() => explorerProps.onEntryDelete(props.path)}
           >
             <button
               onClick={() => {
@@ -179,7 +180,7 @@ export function Explorer(explorerProps: {
                 styles.dirEnt,
                 styles.dir,
                 styles.hover,
-                !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
+                !temporaryEntry() && isCursor(props.path) && styles.cursor,
               )}
               style={{
                 '--layer': props.layer - 1,
@@ -194,36 +195,36 @@ export function Explorer(explorerProps: {
                 <Input
                   initialValue={getName(props.path)}
                   onSubmit={name => {
-                    explorerProps.onDirEntRename(props.path, `${getParentPath(props.path)}/${name}`)
+                    explorerProps.onEntryRename(props.path, `${getParentPath(props.path)}/${name}`)
                     setEditable(false)
                   }}
                   onBlur={() => setEditable(false)}
                 />
               </Show>
             </button>
-          </DirEntContextMenu>
+          </EntryContextMenu>
         </Show>
         <Show when={!collapsed()}>
-          <Show when={temporaryDirEnt() === 'dir' && hasTemporaryDirEnt(props.path)}>
+          <Show when={temporaryEntry() === 'dir' && hasTemporaryEntry(props.path)}>
             <div>
-              <TemporaryDirEnt
+              <TemporaryEntry
                 parentPath={props.path}
                 layer={props.layer}
-                type={temporaryDirEnt()!}
+                type={temporaryEntry()!}
               />
             </div>
           </Show>
-          <Index each={dirEnts().dirs}>{dir => <Dir layer={props.layer + 1} path={dir()} />}</Index>
-          <Show when={temporaryDirEnt() === 'file' && hasTemporaryDirEnt(props.path)}>
+          <Index each={entries().dirs}>{dir => <Dir layer={props.layer + 1} path={dir()} />}</Index>
+          <Show when={temporaryEntry() === 'file' && hasTemporaryEntry(props.path)}>
             <div>
-              <TemporaryDirEnt
+              <TemporaryEntry
                 parentPath={props.path}
                 layer={props.layer}
-                type={temporaryDirEnt()!}
+                type={temporaryEntry()!}
               />
             </div>
           </Show>
-          <Index each={dirEnts().files}>{file => <File layer={props.layer} path={file()} />}</Index>
+          <Index each={entries().files}>{file => <File layer={props.layer} path={file()} />}</Index>
         </Show>
       </>
     )
@@ -236,16 +237,16 @@ export function Explorer(explorerProps: {
       <Show
         when={editable()}
         fallback={
-          <DirEntContextMenu
+          <EntryContextMenu
             path={props.path}
             onEditable={() => setEditable(true)}
-            onDelete={() => explorerProps.onDirEntDelete(props.path)}
+            onDelete={() => explorerProps.onEntryDelete(props.path)}
           >
             <button
               class={clsx(
                 styles.hover,
                 styles.file,
-                !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
+                !temporaryEntry() && isCursor(props.path) && styles.cursor,
               )}
               style={{
                 '--layer': props.layer,
@@ -259,7 +260,7 @@ export function Explorer(explorerProps: {
             >
               {getName(props.path)}
             </button>
-          </DirEntContextMenu>
+          </EntryContextMenu>
         }
       >
         <Input
@@ -267,7 +268,7 @@ export function Explorer(explorerProps: {
             styles.dir,
             styles.file,
             styles.hover,
-            !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
+            !temporaryEntry() && isCursor(props.path) && styles.cursor,
           )}
           style={{
             'padding-left': `calc(${props.layer} * 10px + var(--margin))`,
@@ -275,7 +276,7 @@ export function Explorer(explorerProps: {
           }}
           initialValue={getName(props.path)}
           onSubmit={name => {
-            explorerProps.onDirEntRename(props.path, `${getParentPath(props.path)}/${name}`)
+            explorerProps.onEntryRename(props.path, `${getParentPath(props.path)}/${name}`)
             setEditable(false)
           }}
           onBlur={() => setEditable(false)}
@@ -287,13 +288,30 @@ export function Explorer(explorerProps: {
   return (
     <>
       <div class={clsx(styles.bar, styles.explorerBar)}>
-        <CodiconButton kind="repo-clone" data-blur-block onClick={() => explorerProps.onClone()} />
-        <CodiconButton kind="new-file" data-blur-block onClick={() => setTemporaryDirEnt('file')} />
-        <CodiconButton
-          kind="new-folder"
-          data-blur-block
-          onClick={() => setTemporaryDirEnt('dir')}
-        />
+        <div>
+          <CodiconButton
+            kind="repo-create"
+            data-blur-block
+            onClick={() => explorerProps.onRepoCreate()}
+          />
+          <CodiconButton
+            kind="repo-forked"
+            data-blur-block
+            onClick={() => explorerProps.onRepoFork()}
+          />
+        </div>
+        <div>
+          <CodiconButton
+            kind="new-file"
+            data-blur-block
+            onClick={() => setTemporaryEntry('file')}
+          />
+          <CodiconButton
+            kind="new-folder"
+            data-blur-block
+            onClick={() => setTemporaryEntry('dir')}
+          />
+        </div>
       </div>
       <div class={styles.explorer}>
         <Dir path="" layer={0} />

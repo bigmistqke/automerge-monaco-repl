@@ -182,7 +182,9 @@ button {
 
 .explorerBar {
   display: flex;
-  justify-content: end;
+  & > div:first-child {
+    flex: 1;
+  }
 }
 
 .dir,

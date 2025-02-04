@@ -107,19 +107,19 @@ export default function App() {
       handle = repo.create<Record<string, string | null>>({
         [escape('src/main.ts')]: `import { randomColor } from "./math.ts"
         
-    function randomBodyColor(){
-      document.body.style.background = randomColor()
-    }    
-    
-    requestAnimationFrame(randomBodyColor)
-    setInterval(randomBodyColor, 2000)`,
+function randomBodyColor(){
+  document.body.style.background = randomColor()
+}    
+
+requestAnimationFrame(randomBodyColor)
+setInterval(randomBodyColor, 2000)`,
         [escape('src/math.ts')]: `export function randomValue(){
-      return 200 + Math.random() * 50
-    }
-        
-    export function randomColor(){
-      return \`rgb(\${randomValue()}, \${randomValue()}, \${randomValue()})\`
-    }`,
+  return 200 + Math.random() * 50
+}
+    
+export function randomColor(){
+  return \`rgb(\${randomValue()}, \${randomValue()}, \${randomValue()})\`
+}`,
         'index.html': '<script src="./src/main.ts" type="module"></script>',
         src: null,
       })
@@ -184,18 +184,21 @@ export default function App() {
             }}
             selectedPath={selectedPath()}
             isPathSelected={isPathSelected}
-            onClone={() => {
+            onRepoCreate={() => {
+              setUrl('')
+            }}
+            onRepoFork={() => {
               const _handle = repo.create(handle()!.doc())
               setUrl(_handle.url)
             }}
-            onDirEntCreate={(path, type) => {
+            onEntryCreate={(path, type) => {
               batch(() => {
                 handle()?.change(doc => (doc[escape(path)] = type === 'dir' ? null : ''))
                 addTab(path)
                 selectPath(path)
               })
             }}
-            onDirEntRename={(currentPath, newPath) => {
+            onEntryRename={(currentPath, newPath) => {
               batch(() => {
                 const escapedCurrentPath = escape(currentPath)
                 newPath = normalizePath(newPath)
@@ -222,7 +225,7 @@ export default function App() {
                 }
               })
             }}
-            onDirEntDelete={path => {
+            onEntryDelete={path => {
               handle()?.change(doc => {
                 delete doc[escape(path)]
               })
