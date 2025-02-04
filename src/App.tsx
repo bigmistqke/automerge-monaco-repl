@@ -95,10 +95,7 @@ export default function App() {
   const isPathSelected = createSelector(selectedPath)
 
   const repo = new Repo({
-    network: [
-      new BrowserWebSocketClientAdapter('wss://sync.cyberspatialstudies.org'),
-      new BroadcastChannelNetworkAdapter(),
-    ],
+    network: [new BrowserWebSocketClientAdapter('wss://sync.cyberspatialstudies.org')],
     storage: new IndexedDBStorageAdapter(),
   })
   const rootDocUrl = document.location.hash.substring(1)
