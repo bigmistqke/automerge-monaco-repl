@@ -51,7 +51,6 @@ export default function automonaco(
     handle.change(doc => {
       for (let change of event.changes) {
         let { rangeOffset, rangeLength, text } = change
-        console.log('LOCAL CHANGES', path)
         splice(doc as Doc<unknown>, [escape(path)], rangeOffset, rangeLength, text)
       }
     })
@@ -92,7 +91,6 @@ export default function automonaco(
 
       if (model) {
         // Delete the path from the filesystem
-        console.log(patches.find(patch => patch.action === 'del'))
         if (patches.find(patch => patch.action === 'del' && patch.path.length === 1)) {
           model.dispose()
           return

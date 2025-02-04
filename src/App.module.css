@@ -42,7 +42,7 @@ body/* [data-color-mode='dark'] */ {
   --color-selection: #67a1df95;
   --padding: 2px 8px;
   --size: 25px;
-  --explorer-pad: 20px;
+  --explorer-pad: 15px;
 }
 
 code {
@@ -178,6 +178,8 @@ button {
   display: grid;
   align-content: start;
   background-color: var(--color-explorer);
+  padding-top: 3px;
+  padding-left: 9px;
   overflow-x: auto;
 }
 
@@ -218,13 +220,16 @@ button {
   background: transparent;
   padding-right: 0px;
   padding-left: var(--padding);
-  width: 100%;
   height: var(--size);
   color: var(--color-foreground);
   font-size: 10pt;
   font-family: geist;
   text-align: left;
   white-space: nowrap;
+}
+
+.file.selected .title {
+  text-decoration: underline;
 }
 
 .temporaryEntry {

@@ -20,7 +20,6 @@ export function Codicon<T extends ValidComponent = 'div'>(
       class={clsx(props.class, styles.codicon)}
       style={{
         ...props.style,
-        'text-align': 'center',
         '--codicon': `'\\${codiconMap[config.kind]}'`,
       }}
       {...rest}

@@ -138,8 +138,6 @@ export function randomColor(){
     ),
   )
 
-  createEffect(() => console.log('Object.keys(unescapedFs)', Object.keys(unescapedFs() || {})))
-
   const executables = createExecutables(fs, {
     css: { type: 'css' },
     js: {
@@ -158,15 +156,16 @@ export function randomColor(){
     html: {
       type: 'html',
       transform(config) {
-        const html = parseHtml(config)
-          // Transform content of all `<script type="module" />` elements
-          .transformModuleScriptContent(transformJs)
-          // Bind relative `src`-attribute of all `<script/>` elements to FileSystem
-          .bindScriptSrc()
-          // Bind relative `href`-attribute of all `<link/>` elements to FileSystem
-          .bindLinkHref()
-          .toString()
-        return html
+        return (
+          parseHtml(config)
+            // Transform content of all `<script type="module" />` elements
+            .transformModuleScriptContent(transformJs)
+            // Bind relative `src`-attribute of all `<script/>` elements to FileSystem
+            .bindScriptSrc()
+            // Bind relative `href`-attribute of all `<link/>` elements to FileSystem
+            .bindLinkHref()
+            .toString()
+        )
       },
     },
   })
