@@ -41,7 +41,8 @@ body/* [data-color-mode='dark'] */ {
   --color-handle: #466299;
   --color-selection: #67a1df95;
   --padding: 2px 8px;
-  --margin: 25px;
+  --size: 25px;
+  --explorer-pad: 20px;
 }
 
 code {
@@ -128,7 +129,7 @@ button {
   display: grid;
   grid-template-columns: 1fr auto;
   background: var(--color-tab-inactive);
-  height: var(--margin);
+  height: var(--size);
   white-space: nowrap;
 
   & > button:first-child {
@@ -170,7 +171,7 @@ button {
 
 .explorerPane {
   display: grid;
-  grid-template-rows: var(--margin) 1fr;
+  grid-template-rows: var(--size) 1fr;
 }
 
 .explorer {
@@ -192,7 +193,7 @@ button {
 
 .framePane {
   display: grid;
-  grid-template-rows: var(--margin) 1fr;
+  grid-template-rows: var(--size) 1fr;
 }
 
 .frameBar {
@@ -209,13 +210,16 @@ button {
 
 .dir,
 .file {
+  --padding: calc(var(--layer) * var(--explorer-pad));
   display: grid;
+  grid-template-columns: var(--explorer-pad) 1fr;
   align-content: center;
   border: none;
   background: transparent;
   padding-right: 0px;
+  padding-left: var(--padding);
   width: 100%;
-  height: var(--margin);
+  height: var(--size);
   color: var(--color-foreground);
   font-size: 10pt;
   font-family: geist;
@@ -223,15 +227,12 @@ button {
   white-space: nowrap;
 }
 
-.file {
-  padding-left: calc(var(--layer) * 10px + var(--margin));
-  width: calc(100% - calc(var(--layer) * 10px + var(--margin)));
+.temporaryEntry {
+  width: calc(100% - var(--padding) - 1);
 }
 
 .dir {
-  grid-template-columns: var(--margin) 1fr;
   align-items: center;
-  padding-left: calc(var(--layer) * 10px);
   text-align: left;
 
   & > button {

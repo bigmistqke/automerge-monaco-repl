@@ -36,6 +36,8 @@ import { CodiconButton } from './components.tsx'
 import { Editor } from './editor.tsx'
 import { Explorer } from './explorer.tsx'
 
+const DEFAULT_TABS = [{ path: 'index.html', scroll: { top: 0, left: 0 }, selection: undefined }]
+
 export interface Tab {
   path: string
   scroll: { top: number; left: number }
@@ -77,9 +79,7 @@ function Handle() {
 }
 
 export default function App() {
-  const [tabs, setTabs] = createStore<Array<Tab>>([
-    { path: 'index.html', scroll: { top: 0, left: 0 }, selection: undefined },
-  ])
+  const [tabs, setTabs] = createStore<Array<Tab>>(DEFAULT_TABS)
   const [selectedPath, selectPath] = createSignal('index.html')
   const selectedTab = () => tabs.find(tab => tab.path === selectedPath())!
 
@@ -173,161 +173,155 @@ export function randomColor(){
 
   return (
     <Show when={handle()}>
-      <Split class={styles.app}>
-        <Split.Pane size="150px" class={styles.explorerPane}>
-          <Explorer
-            fs={fs()}
-            onPathSelect={path => {
-              batch(() => {
-                addTab(path)
-                selectPath(path)
-              })
-            }}
-            selectedPath={selectedPath()}
-            isPathSelected={isPathSelected}
-            onRepoCreate={() => {
-              setUrl('')
-            }}
-            onRepoFork={() => {
-              const _handle = repo.create(handle()!.doc())
-              setUrl(_handle.url)
-            }}
-            onEntryCreate={(path, type) => {
-              batch(() => {
-                handle()?.change(doc => (doc[escape(path)] = type === 'dir' ? null : ''))
-                addTab(path)
-                selectPath(path)
-              })
-            }}
-            onEntryRename={(currentPath, newPath) => {
-              batch(() => {
-                const escapedCurrentPath = escape(currentPath)
-                newPath = normalizePath(newPath)
-                handle()?.change(doc => {
-                  Object.keys(doc).forEach(path => {
-                    if (path === escapedCurrentPath || path.startsWith(`${escapedCurrentPath}--`)) {
-                      const _path = path.replace(escape(currentPath), escape(newPath))
-                      doc[_path] = doc[path]
-                      delete doc[path]
-                    }
-                  })
+      {handle => (
+        <Split class={styles.app}>
+          <Split.Pane size="150px" class={styles.explorerPane}>
+            <Explorer
+              fs={fs()}
+              onPathSelect={path => {
+                batch(() => {
+                  addTab(path)
+                  selectPath(path)
                 })
-                setTabs(
-                  produce(tabs => {
-                    tabs.forEach(tab => {
-                      if (tab.path === currentPath || tab.path.startsWith(`${currentPath}/`)) {
-                        tab.path = tab.path.replace(currentPath, newPath)
+              }}
+              selectedPath={selectedPath()}
+              isPathSelected={isPathSelected}
+              onRepoCreate={() => {
+                setUrl('')
+                setTabs(DEFAULT_TABS)
+              }}
+              onRepoFork={() => {
+                const _handle = repo.create(handle().doc())
+                setUrl(_handle.url)
+              }}
+              onEntryCreate={(path, type) => {
+                batch(() => {
+                  handle().change(doc => (doc[escape(path)] = type === 'dir' ? null : ''))
+                  addTab(path)
+                  selectPath(path)
+                })
+              }}
+              onEntryRename={(currentPath, newPath) => {
+                newPath = normalizePath(newPath)
+                if (currentPath === newPath) return
+                batch(() => {
+                  const escapedCurrentPath = escape(currentPath)
+                  handle().change(doc => {
+                    Object.keys(doc).forEach(path => {
+                      if (
+                        path === escapedCurrentPath ||
+                        path.startsWith(`${escapedCurrentPath}--`)
+                      ) {
+                        const _path = path.replace(escape(currentPath), escape(newPath))
+                        doc[_path] = doc[path]
+                        delete doc[path]
                       }
                     })
-                  }),
-                )
-                if (selectedPath() === currentPath) {
-                  selectPath(newPath)
-                }
-              })
-            }}
-            onEntryDelete={path => {
-              handle()?.change(doc => {
-                delete doc[escape(path)]
-              })
-            }}
-          />
-        </Split.Pane>
-        <Handle />
-        <Split.Pane class={styles.editor}>
-          <div class={clsx(styles.tabs, styles.bar)}>
-            <For each={tabs}>
-              {tab => (
-                <span
-                  ref={element => {
-                    createEffect(() => isPathSelected(tab.path) && element.scrollIntoView())
-                  }}
-                  class={clsx(styles.tab, isPathSelected(tab.path) && styles.selected)}
-                >
-                  <button onClick={() => selectPath(tab.path)}>{getName(tab.path)}</button>
-                  <button
-                    onClick={() => {
-                      if (isPathSelected(tab.path)) {
-                        const index = tabs.findIndex(tab => tab === tab)
-                        selectPath(tabs[index - 1].path)
-                      }
-                      deleteTab(tab.path)
-                    }}
-                  >
-                    <Codicon kind="close" />
-                  </button>
-                </span>
-              )}
-            </For>
-          </div>
-          <Editor
-            handle={handle()}
-            path={selectedPath()}
-            tabs={tabs}
-            tab={selectedTab()}
-            tsconfig={typeDownloader.tsconfig()}
-            onScroll={scroll =>
-              setTabs(
-                produce(tabs => {
-                  const tab = tabs.find(tab => tab.path === selectedPath())!
-                  tab.scroll = scroll
-                }),
-              )
-            }
-            onSelect={({ selection }) =>
-              setTabs(
-                produce(tabs => {
-                  const tab = tabs.find(tab => tab.path === selectedPath())!
-                  tab.selection = selection
-                }),
-              )
-            }
-            onLink={path => {
-              return
-              // TODO: fix this
-              if (path.startsWith('http:') || path.startsWith('https:')) {
-                window.open(path, '_blank')
-              } else {
-                path = resolvePath(selectedPath(), path)
-                addTab(path)
-                selectPath(path)
-              }
-            }}
-            theme={nightOwl}
-          />
-        </Split.Pane>
-        <Handle />
-        <Split.Pane class={styles.framePane}>
-          <div class={clsx(styles.bar, styles.frameBar)}>
-            <div />
-            {/* <input class={styles.input} value="/" /> */}
-            <CodiconButton
-              kind="refresh"
-              onClick={() => {
-                executables.invalidate('index.html')
+                  })
+                  setTabs(
+                    produce(tabs => {
+                      tabs.forEach(tab => {
+                        if (tab.path === currentPath || tab.path.startsWith(`${currentPath}/`)) {
+                          tab.path = tab.path.replace(currentPath, newPath)
+                        }
+                      })
+                    }),
+                  )
+                  if (selectedPath() === currentPath) {
+                    selectPath(newPath)
+                  }
+                })
+              }}
+              onEntryDelete={path => {
+                handle().change(doc => {
+                  delete doc[escape(path)]
+                })
               }}
             />
-          </div>
-          <iframe
-            /* ref={element => {
-              createEffect(
-                on(
-                  () => executables.get('index.html'),
-                  () => {
-                    element.addEventListener('load', () => {
-                      element.contentWindow?.history.pushState({ some: 'state' }, '', '#newstate')
-                    })
-                  },
-                ),
-              )
-            }} */
-            src={
-              executables.get('index.html') ? `${executables.get('index.html')}#/test` : undefined
-            }
-            class={styles.frame}
-          />
-        </Split.Pane>
-      </Split>
+          </Split.Pane>
+          <Handle />
+          <Split.Pane class={styles.editor}>
+            <div class={clsx(styles.tabs, styles.bar)}>
+              <For each={tabs}>
+                {tab => (
+                  <span
+                    ref={element => {
+                      createEffect(() => isPathSelected(tab.path) && element.scrollIntoView())
+                    }}
+                    class={clsx(styles.tab, isPathSelected(tab.path) && styles.selected)}
+                  >
+                    <button onClick={() => selectPath(tab.path)}>{getName(tab.path)}</button>
+                    <button
+                      onClick={() => {
+                        if (isPathSelected(tab.path)) {
+                          const index = tabs.findIndex(_tab => _tab === tab)
+                          if (index !== -1) return
+                          selectPath(tabs[index - 1].path)
+                        }
+                        deleteTab(tab.path)
+                      }}
+                    >
+                      <Codicon kind="close" />
+                    </button>
+                  </span>
+                )}
+              </For>
+            </div>
+            <Editor
+              handle={handle()}
+              tabs={tabs}
+              tab={selectedTab()}
+              tsconfig={typeDownloader.tsconfig()}
+              onScroll={scroll =>
+                setTabs(
+                  produce(tabs => {
+                    const tab = tabs.find(tab => tab.path === selectedPath())!
+                    tab.scroll = scroll
+                  }),
+                )
+              }
+              onSelect={({ selection }) =>
+                setTabs(
+                  produce(tabs => {
+                    const tab = tabs.find(tab => tab.path === selectedPath())!
+                    tab.selection = selection
+                  }),
+                )
+              }
+              onLink={path => {
+                return
+                // TODO: fix this
+                if (path.startsWith('http:') || path.startsWith('https:')) {
+                  window.open(path, '_blank')
+                } else {
+                  path = resolvePath(selectedPath(), path)
+                  addTab(path)
+                  selectPath(path)
+                }
+              }}
+              theme={nightOwl}
+            />
+          </Split.Pane>
+          <Handle />
+          <Split.Pane class={styles.framePane}>
+            <div class={clsx(styles.bar, styles.frameBar)}>
+              <div />
+              <CodiconButton
+                kind="refresh"
+                onClick={() => {
+                  executables.invalidate('index.html')
+                }}
+              />
+            </div>
+            <iframe
+              src={
+                executables.get('index.html') ? `${executables.get('index.html')}#/test` : undefined
+              }
+              class={styles.frame}
+            />
+          </Split.Pane>
+        </Split>
+      )}
     </Show>
   )
 }

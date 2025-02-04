@@ -17,6 +17,32 @@ import styles from './App.module.css'
 import { Codicon } from './codicon/index.tsx'
 import { CodiconButton } from './components.tsx'
 
+function createDroppableHandles(onDrop: (path: string) => void) {
+  return {
+    onDragOver: (event: DragEvent) => {
+      event.preventDefault()
+    },
+    onDrop: (event: DragEvent) => {
+      const path = event.dataTransfer?.getData('text/plain')
+      if (typeof path === 'string') {
+        onDrop(path)
+      }
+    },
+  }
+}
+
+function createDraggableHandles(path: string, onDrop: (path: string) => void) {
+  return {
+    draggable: true,
+    onDragStart: (event: DragEvent) => {
+      console.log('path', path)
+      event.dataTransfer?.setData('text/plain', path)
+      event.dataTransfer!.dropEffect = 'move'
+    },
+    ...createDroppableHandles(onDrop),
+  }
+}
+
 function EntryContextMenu(
   props: ParentProps<{ path: string; onEditable(): void; onDelete(): void }>,
 ) {
@@ -99,14 +125,16 @@ export function Explorer(explorerProps: {
   function TemporaryEntry(props: { parentPath: string; layer: number; type: 'file' | 'dir' }) {
     return (
       <div
-        class={clsx(styles.dirEnt, styles.cursor, props.type === 'dir' ? styles.dir : styles.file)}
+        class={clsx(
+          styles.temporaryEntry,
+          styles.cursor,
+          props.type === 'dir' ? styles.dir : styles.file,
+        )}
         style={{
           '--layer': props.layer,
         }}
       >
-        <Show when={props.type === 'dir'}>
-          <Codicon kind="chevron-right" />
-        </Show>
+        <Codicon kind={props.type === 'dir' ? 'chevron-right' : 'dash'} />
         <Input
           onBlur={e => {
             if (
@@ -172,12 +200,12 @@ export function Explorer(explorerProps: {
             onDelete={() => explorerProps.onEntryDelete(props.path)}
           >
             <button
-              onClick={() => {
-                setCollapsed(collapsed => !collapsed)
-                setCursor(props.path)
-              }}
+              {...createDraggableHandles(props.path, path => {
+                const newPath = `${props.path}/${getName(path)}`
+                console.log('path, newPath', path, newPath)
+                explorerProps.onEntryRename(path, newPath)
+              })}
               class={clsx(
-                styles.dirEnt,
                 styles.dir,
                 styles.hover,
                 !temporaryEntry() && isCursor(props.path) && styles.cursor,
@@ -185,20 +213,24 @@ export function Explorer(explorerProps: {
               style={{
                 '--layer': props.layer - 1,
               }}
+              onClick={() => {
+                setCollapsed(collapsed => !collapsed)
+                setCursor(props.path)
+              }}
             >
               <Codicon
-                style={{ width: `var(--explorer-layer-offset)` }}
                 as="span"
                 kind={collapsed() ? 'chevron-right' : 'chevron-down'}
+                style={{ width: `var(--explorer-layer-offset)` }}
               />
               <Show when={editable()} fallback={<span>{getName(props.path)}</span>}>
                 <Input
                   initialValue={getName(props.path)}
+                  onBlur={() => setEditable(false)}
                   onSubmit={name => {
                     explorerProps.onEntryRename(props.path, `${getParentPath(props.path)}/${name}`)
                     setEditable(false)
                   }}
-                  onBlur={() => setEditable(false)}
                 />
               </Show>
             </button>
@@ -206,23 +238,11 @@ export function Explorer(explorerProps: {
         </Show>
         <Show when={!collapsed()}>
           <Show when={temporaryEntry() === 'dir' && hasTemporaryEntry(props.path)}>
-            <div>
-              <TemporaryEntry
-                parentPath={props.path}
-                layer={props.layer}
-                type={temporaryEntry()!}
-              />
-            </div>
+            <TemporaryEntry parentPath={props.path} layer={props.layer} type={temporaryEntry()!} />
           </Show>
           <Index each={entries().dirs}>{dir => <Dir layer={props.layer + 1} path={dir()} />}</Index>
           <Show when={temporaryEntry() === 'file' && hasTemporaryEntry(props.path)}>
-            <div>
-              <TemporaryEntry
-                parentPath={props.path}
-                layer={props.layer}
-                type={temporaryEntry()!}
-              />
-            </div>
+            <TemporaryEntry parentPath={props.path} layer={props.layer} type={temporaryEntry()!} />
           </Show>
           <Index each={entries().files}>{file => <File layer={props.layer} path={file()} />}</Index>
         </Show>
@@ -243,44 +263,59 @@ export function Explorer(explorerProps: {
             onDelete={() => explorerProps.onEntryDelete(props.path)}
           >
             <button
-              class={clsx(
-                styles.hover,
-                styles.file,
-                !temporaryEntry() && isCursor(props.path) && styles.cursor,
-              )}
+              class={styles.file}
               style={{
                 '--layer': props.layer,
-                /* 'padding-left': `calc(${props.layer} * 10px + var(--margin))`, */
-                'text-decoration': explorerProps.isPathSelected(props.path) ? 'underline' : 'none',
               }}
-              onClick={() => {
-                explorerProps.onPathSelect(props.path)
-                setCursor(props.path)
-              }}
+              {...createDraggableHandles(props.path, path => {
+                const newPath = `${getParentPath(props.path)}/${getName(path)}`
+                explorerProps.onEntryRename(path, newPath)
+              })}
             >
-              {getName(props.path)}
+              <Codicon kind="dash" />
+              <div
+                class={clsx(
+                  styles.hover,
+                  !temporaryEntry() && isCursor(props.path) && styles.cursor,
+                )}
+                style={{
+                  /* 'padding-left': `calc(${props.layer} * 10px + var(--margin))`, */
+                  'text-decoration': explorerProps.isPathSelected(props.path)
+                    ? 'underline'
+                    : 'none',
+                }}
+                onClick={() => {
+                  explorerProps.onPathSelect(props.path)
+                  setCursor(props.path)
+                }}
+              >
+                {getName(props.path)}
+              </div>
             </button>
           </EntryContextMenu>
         }
       >
-        <Input
-          class={clsx(
-            styles.dir,
-            styles.file,
-            styles.hover,
-            !temporaryEntry() && isCursor(props.path) && styles.cursor,
-          )}
+        <div
+          class={styles.file}
           style={{
-            'padding-left': `calc(${props.layer} * 10px + var(--margin))`,
-            'text-decoration': explorerProps.isPathSelected(props.path) ? 'underline' : 'none',
+            '--layer': props.layer,
           }}
-          initialValue={getName(props.path)}
-          onSubmit={name => {
-            explorerProps.onEntryRename(props.path, `${getParentPath(props.path)}/${name}`)
-            setEditable(false)
-          }}
-          onBlur={() => setEditable(false)}
-        />
+        >
+          <Codicon kind="dash" />
+          <Input
+            class={clsx(!temporaryEntry() && isCursor(props.path) && styles.cursor)}
+            style={{
+              'padding-left': `calc(${props.layer} * 10px + var(--margin))`,
+              'text-decoration': explorerProps.isPathSelected(props.path) ? 'underline' : 'none',
+            }}
+            initialValue={getName(props.path)}
+            onSubmit={name => {
+              explorerProps.onEntryRename(props.path, `${getParentPath(props.path)}/${name}`)
+              setEditable(false)
+            }}
+            onBlur={() => setEditable(false)}
+          />
+        </div>
       </Show>
     )
   }
@@ -313,7 +348,10 @@ export function Explorer(explorerProps: {
           />
         </div>
       </div>
-      <div class={styles.explorer}>
+      <div
+        class={styles.explorer}
+        {...createDroppableHandles(path => explorerProps.onEntryRename(path, getName(path)))}
+      >
         <Dir path="" layer={0} />
       </div>
     </>
