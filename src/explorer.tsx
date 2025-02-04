@@ -205,19 +205,23 @@ export function Explorer(explorerProps: {
         </Show>
         <Show when={!collapsed()}>
           <Show when={temporaryDirEnt() === 'dir' && hasTemporaryDirEnt(props.path)}>
-            <TemporaryDirEnt
-              parentPath={props.path}
-              layer={props.layer}
-              type={temporaryDirEnt()!}
-            />
+            <div>
+              <TemporaryDirEnt
+                parentPath={props.path}
+                layer={props.layer}
+                type={temporaryDirEnt()!}
+              />
+            </div>
           </Show>
           <Index each={dirEnts().dirs}>{dir => <Dir layer={props.layer + 1} path={dir()} />}</Index>
           <Show when={temporaryDirEnt() === 'file' && hasTemporaryDirEnt(props.path)}>
-            <TemporaryDirEnt
-              parentPath={props.path}
-              layer={props.layer}
-              type={temporaryDirEnt()!}
-            />
+            <div>
+              <TemporaryDirEnt
+                parentPath={props.path}
+                layer={props.layer}
+                type={temporaryDirEnt()!}
+              />
+            </div>
           </Show>
           <Index each={dirEnts().files}>{file => <File layer={props.layer} path={file()} />}</Index>
         </Show>
@@ -239,13 +243,13 @@ export function Explorer(explorerProps: {
           >
             <button
               class={clsx(
-                styles.dir,
-                styles.file,
                 styles.hover,
+                styles.file,
                 !temporaryDirEnt() && isCursor(props.path) && styles.cursor,
               )}
               style={{
-                'padding-left': `calc(${props.layer} * 10px + var(--margin))`,
+                '--layer': props.layer,
+                /* 'padding-left': `calc(${props.layer} * 10px + var(--margin))`, */
                 'text-decoration': explorerProps.isPathSelected(props.path) ? 'underline' : 'none',
               }}
               onClick={() => {

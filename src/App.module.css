@@ -188,6 +188,7 @@ button {
 .dir,
 .file {
   display: grid;
+  align-content: center;
   border: none;
   background: transparent;
   padding-right: 0px;
@@ -202,6 +203,7 @@ button {
 
 .file {
   padding-left: calc(var(--layer) * 10px + var(--margin));
+  width: calc(100% - calc(var(--layer) * 10px + var(--margin)));
 }
 
 .dir {
