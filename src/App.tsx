@@ -32,6 +32,7 @@ import ts from 'typescript'
 import styles from './App.module.css'
 import { escape, unescape } from './automonaco.ts'
 import { Codicon } from './codicon/index.tsx'
+import { CodiconButton } from './components.tsx'
 import { Editor } from './editor.tsx'
 import { Explorer } from './explorer.tsx'
 
@@ -282,6 +283,8 @@ export function randomColor(){
               )
             }
             onLink={path => {
+              return
+              // TODO: fix this
               if (path.startsWith('http:') || path.startsWith('https:')) {
                 window.open(path, '_blank')
               } else {
@@ -294,8 +297,35 @@ export function randomColor(){
           />
         </Split.Pane>
         <Handle />
-        <Split.Pane>
-          <iframe src={executables.get('index.html')} class={styles.frame} />
+        <Split.Pane class={styles.framePane}>
+          <div class={clsx(styles.bar, styles.frameBar)}>
+            <div />
+            {/* <input class={styles.input} value="/" /> */}
+            <CodiconButton
+              kind="refresh"
+              onClick={() => {
+                executables.invalidate('index.html')
+              }}
+            />
+          </div>
+          <iframe
+            /* ref={element => {
+              createEffect(
+                on(
+                  () => executables.get('index.html'),
+                  () => {
+                    element.addEventListener('load', () => {
+                      element.contentWindow?.history.pushState({ some: 'state' }, '', '#newstate')
+                    })
+                  },
+                ),
+              )
+            }} */
+            src={
+              executables.get('index.html') ? `${executables.get('index.html')}#/test` : undefined
+            }
+            class={styles.frame}
+          />
         </Split.Pane>
       </Split>
     </Show>

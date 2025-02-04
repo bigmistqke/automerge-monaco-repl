@@ -182,8 +182,28 @@ button {
 
 .explorerBar {
   display: flex;
+  & > div {
+    align-content: center;
+  }
   & > div:first-child {
     flex: 1;
+  }
+}
+
+.framePane {
+  display: grid;
+  grid-template-rows: var(--margin) 1fr;
+}
+
+.frameBar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+
+  & > input {
+    margin: 2px 5px;
+    border: 1px solid var(--color-foreground-inactive);
+    border-radius: 5px;
+    padding-left: 5px;
   }
 }
 
