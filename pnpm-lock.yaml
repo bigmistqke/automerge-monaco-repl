@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@automerge/automerge':
+    specifier: 2.2.9-alpha.4
+    version: 2.2.9-alpha.4
   '@automerge/automerge-repo':
     specifier: 2.0.0-alpha.22
     version: 2.0.0-alpha.22(@types/node@22.10.10)(typescript@5.7.3)
@@ -147,6 +150,12 @@ packages:
 
   /@automerge/automerge@2.2.8:
     resolution: {integrity: sha512-kP6Z9lIkNeIGe/jhF8SUQAgUMwVjtXCBL0eZEgQGCoWvPNTPcg8fnQco28XkYBrfkkuqiEUAbdHhJmSp0y79ug==}
+    dependencies:
+      uuid: 9.0.1
+    dev: false
+
+  /@automerge/automerge@2.2.9-alpha.4:
+    resolution: {integrity: sha512-5zkZJhpFugcLUwrRZBxOSQwom0ZDvDR6zOFlbkIjO35HzPuwLu2+gF8uEEgTvLpmT5HZquUTIYi0Xf5cSEGJwA==}
     dependencies:
       uuid: 9.0.1
     dev: false

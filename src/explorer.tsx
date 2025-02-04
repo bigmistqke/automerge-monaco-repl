@@ -74,6 +74,7 @@ export function Explorer(explorerProps: {
   fs: Record<string, string | null>
   isPathSelected(path: string): boolean
   onPathSelect(path: string): void
+  onClone(): void
   onDirEntCreate(path: string, type: 'dir' | 'file'): void
   onDirEntRename(currentPath: string, newPath: string): void
   onDirEntDelete(path: string): void
@@ -282,6 +283,7 @@ export function Explorer(explorerProps: {
   return (
     <>
       <div class={clsx(styles.bar, styles.explorerBar)}>
+        <CodiconButton kind="repo-clone" data-blur-block onClick={() => explorerProps.onClone()} />
         <CodiconButton kind="new-file" data-blur-block onClick={() => setTemporaryDirEnt('file')} />
         <CodiconButton
           kind="new-folder"

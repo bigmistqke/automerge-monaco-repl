@@ -1,7 +1,7 @@
 import { DocHandle } from '@automerge/automerge-repo'
 import loader from '@monaco-editor/loader'
 import type { editor, languages, Selection } from 'monaco-editor'
-import { createEffect, createResource, onCleanup } from 'solid-js'
+import { createEffect, createResource, onCleanup, untrack } from 'solid-js'
 import styles from './App.module.css'
 import { Tab } from './App.tsx'
 import automonaco from './automonaco.ts'
@@ -17,26 +17,26 @@ export function Editor(props: {
 }) {
   let element: HTMLDivElement
 
-  const [monaco] = createResource(async () => {
+  const [monacoEditor] = createResource(async () => {
     const monaco = await loader.init()
     props.theme.colors['editor.background'] = '#00000000'
     monaco.editor.defineTheme('theme', props.theme)
     monaco.editor.setTheme('theme')
-    return monaco
-  })
-
-  createEffect(async () => {
-    const _monaco = monaco()
-    const doc = props.handle.doc()
-
-    if (!_monaco || !doc) return
-
-    let editor = _monaco.editor.create(element!, {
-      value: doc?.['index.html'] || '',
+    let editor = monaco.editor.create(element!, {
+      value: props.handle.doc()?.['index.html'] || '',
       language: 'typescript',
       automaticLayout: true,
       fontFamily: 'geist-mono',
     })
+    return { monaco, editor }
+  })
+
+  createEffect(async () => {
+    const _monacoEditor = monacoEditor()
+
+    if (!_monacoEditor) return
+
+    const { monaco, editor } = _monacoEditor
 
     editor.onMouseDown(event => {
       const path =
@@ -49,7 +49,7 @@ export function Editor(props: {
     })
 
     createEffect(() =>
-      _monaco.languages.typescript.typescriptDefaults.setCompilerOptions(props.tsconfig),
+      monaco.languages.typescript.typescriptDefaults.setCompilerOptions(props.tsconfig),
     )
 
     editor.onDidScrollChange(event =>
@@ -58,12 +58,14 @@ export function Editor(props: {
     editor.onDidChangeCursorSelection(event => props.onSelect({ selection: event.selection }))
 
     createEffect(() => {
-      const cleanup = automonaco(_monaco, editor, props.handle, props.tab.path)
-      editor.setScrollTop(props.tab.scroll.top)
-      editor.setScrollLeft(props.tab.scroll.left)
-      if (props.tab.selection) {
-        editor.setSelection(props.tab.selection)
-      }
+      const cleanup = automonaco(monaco, editor, props.handle, props.tab.path)
+      untrack(() => {
+        editor.setScrollTop(props.tab.scroll.top)
+        editor.setScrollLeft(props.tab.scroll.left)
+        if (props.tab.selection) {
+          editor.setSelection(props.tab.selection)
+        }
+      })
       onCleanup(cleanup)
     })
   })

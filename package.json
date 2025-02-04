@@ -19,6 +19,7 @@
     "vite-plugin-solid": "^2.11.0"
   },
   "dependencies": {
+    "@automerge/automerge": "2.2.9-alpha.4",
     "@automerge/automerge-repo": "2.0.0-alpha.22",
     "@automerge/automerge-repo-network-broadcastchannel": "2.0.0-alpha.22",
     "@automerge/automerge-repo-network-websocket": "2.0.0-alpha.22",

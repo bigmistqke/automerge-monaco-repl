@@ -96,12 +96,13 @@ export default function App() {
     network: [new BrowserWebSocketClientAdapter('wss://sync.cyberspatialstudies.org')],
     storage: new IndexedDBStorageAdapter(),
   })
-  const rootDocUrl = document.location.hash.substring(1)
 
-  const [handle] = createResource(async () => {
+  const [url, setUrl] = createSignal<string>(document.location.hash.substring(1))
+
+  const [handle] = createResource(url, async url => {
     let handle: DocHandle<Record<string, string | null>>
-    if (isValidAutomergeUrl(rootDocUrl)) {
-      handle = await repo.find<Record<string, string | null>>(rootDocUrl)
+    if (isValidAutomergeUrl(url)) {
+      handle = await repo.find<Record<string, string | null>>(url)
     } else {
       handle = repo.create<Record<string, string | null>>({
         [escape('src/main.ts')]: `import { randomColor } from "./math.ts"
@@ -183,6 +184,10 @@ export default function App() {
             }}
             selectedPath={selectedPath()}
             isPathSelected={isPathSelected}
+            onClone={() => {
+              const _handle = repo.create(handle()!.doc())
+              setUrl(_handle.url)
+            }}
             onDirEntCreate={(path, type) => {
               batch(() => {
                 handle()?.change(doc => (doc[escape(path)] = type === 'dir' ? null : ''))
