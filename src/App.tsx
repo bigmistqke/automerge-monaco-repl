@@ -1,5 +1,4 @@
 import { DocHandle, isValidAutomergeUrl, Repo } from '@automerge/automerge-repo'
-import { BroadcastChannelNetworkAdapter } from '@automerge/automerge-repo-network-broadcastchannel'
 import { BrowserWebSocketClientAdapter } from '@automerge/automerge-repo-network-websocket'
 import { IndexedDBStorageAdapter } from '@automerge/automerge-repo-storage-indexeddb'
 import {
@@ -16,9 +15,10 @@ import {
 import { Split } from '@bigmistqke/solid-grid-split'
 import { createDocumentProjection } from 'automerge-repo-solid-primitives'
 import clsx from 'clsx'
-import { languages } from 'monaco-editor'
+import { languages, Selection } from 'monaco-editor'
 import nightOwl from 'monaco-themes/themes/Night Owl.json'
 import {
+  batch,
   createEffect,
   createMemo,
   createResource,
@@ -27,6 +27,7 @@ import {
   For,
   Show,
 } from 'solid-js'
+import { createStore, produce } from 'solid-js/store'
 import ts from 'typescript'
 import styles from './App.module.css'
 import { escape, unescape } from './automonaco.ts'
@@ -34,17 +35,11 @@ import { Codicon } from './codicon/index.tsx'
 import { Editor } from './editor.tsx'
 import { Explorer } from './explorer.tsx'
 
-/**********************************************************************************/
-/*                                                                                */
-/*                              Initialize Automerge                              */
-/*                                                                                */
-/**********************************************************************************/
-
-/**********************************************************************************/
-/*                                                                                */
-/*                                     HEADING                                    */
-/*                                                                                */
-/**********************************************************************************/
+export interface Tab {
+  path: string
+  scroll: { top: number; left: number }
+  selection: Selection | undefined
+}
 
 const typeDownloader = createMonacoTypeDownloader({
   target: languages.typescript.ScriptTarget.ES2015,
@@ -81,15 +76,18 @@ function Handle() {
 }
 
 export default function App() {
-  const [tabs, setTabs] = createSignal<Array<string>>(['index.html'])
+  const [tabs, setTabs] = createStore<Array<Tab>>([
+    { path: 'index.html', scroll: { top: 0, left: 0 }, selection: undefined },
+  ])
   const [selectedPath, selectPath] = createSignal('index.html')
+  const selectedTab = () => tabs.find(tab => tab.path === selectedPath())!
 
   function deleteTab(path: string) {
-    setTabs(tabs => tabs.filter(tab => tab !== path))
+    setTabs(tabs => tabs.filter(tab => tab.path !== path))
   }
   function addTab(path: string) {
-    if (tabs().includes(path)) return
-    setTabs(tabs => [...tabs, path])
+    if (tabs.find(tab => tab.path === path)) return
+    setTabs(produce(tabs => tabs.push({ path, scroll: { top: 0, left: 0 }, selection: undefined })))
   }
 
   const isPathSelected = createSelector(selectedPath)
@@ -178,38 +176,46 @@ export default function App() {
           <Explorer
             fs={fs()}
             onPathSelect={path => {
-              selectPath(path)
-              addTab(path)
+              batch(() => {
+                addTab(path)
+                selectPath(path)
+              })
             }}
             selectedPath={selectedPath()}
             isPathSelected={isPathSelected}
             onDirEntCreate={(path, type) => {
-              handle()?.change(doc => (doc[escape(path)] = type === 'dir' ? null : ''))
-              addTab(path)
-              selectPath(path)
+              batch(() => {
+                handle()?.change(doc => (doc[escape(path)] = type === 'dir' ? null : ''))
+                addTab(path)
+                selectPath(path)
+              })
             }}
             onDirEntRename={(currentPath, newPath) => {
-              const escapedCurrentPath = escape(currentPath)
-              newPath = normalizePath(newPath)
-              handle()?.change(doc => {
-                Object.keys(doc).forEach(path => {
-                  if (path === escapedCurrentPath || path.startsWith(`${escapedCurrentPath}--`)) {
-                    const _path = path.replace(escape(currentPath), escape(newPath))
-                    doc[_path] = doc[path]
-                    delete doc[path]
-                  }
+              batch(() => {
+                const escapedCurrentPath = escape(currentPath)
+                newPath = normalizePath(newPath)
+                handle()?.change(doc => {
+                  Object.keys(doc).forEach(path => {
+                    if (path === escapedCurrentPath || path.startsWith(`${escapedCurrentPath}--`)) {
+                      const _path = path.replace(escape(currentPath), escape(newPath))
+                      doc[_path] = doc[path]
+                      delete doc[path]
+                    }
+                  })
                 })
+                setTabs(
+                  produce(tabs => {
+                    tabs.forEach(tab => {
+                      if (tab.path === currentPath || tab.path.startsWith(`${currentPath}/`)) {
+                        tab.path = tab.path.replace(currentPath, newPath)
+                      }
+                    })
+                  }),
+                )
+                if (selectedPath() === currentPath) {
+                  selectPath(newPath)
+                }
               })
-              setTabs(tabs =>
-                tabs.map(tab =>
-                  tab === currentPath || tab.startsWith(`${currentPath}/`)
-                    ? tab.replace(currentPath, newPath)
-                    : tab,
-                ),
-              )
-              if (selectedPath() === currentPath) {
-                selectPath(newPath)
-              }
             }}
             onDirEntDelete={path => {
               handle()?.change(doc => {
@@ -221,22 +227,22 @@ export default function App() {
         <Handle />
         <Split.Pane class={styles.editor}>
           <div class={clsx(styles.tabs, styles.bar)}>
-            <For each={tabs()}>
-              {path => (
+            <For each={tabs}>
+              {tab => (
                 <span
                   ref={element => {
-                    createEffect(() => isPathSelected(path) && element.scrollIntoView())
+                    createEffect(() => isPathSelected(tab.path) && element.scrollIntoView())
                   }}
-                  class={clsx(styles.tab, isPathSelected(path) && styles.selected)}
+                  class={clsx(styles.tab, isPathSelected(tab.path) && styles.selected)}
                 >
-                  <button onClick={() => selectPath(path)}>{getName(path)}</button>
+                  <button onClick={() => selectPath(tab.path)}>{getName(tab.path)}</button>
                   <button
                     onClick={() => {
-                      if (isPathSelected(path)) {
-                        const index = tabs().findIndex(tab => tab === path)
-                        selectPath(tabs()[index - 1])
+                      if (isPathSelected(tab.path)) {
+                        const index = tabs.findIndex(tab => tab === tab)
+                        selectPath(tabs[index - 1].path)
                       }
-                      deleteTab(path)
+                      deleteTab(tab.path)
                     }}
                   >
                     <Codicon kind="close" />
@@ -248,10 +254,33 @@ export default function App() {
           <Editor
             handle={handle()}
             path={selectedPath()}
+            tabs={tabs}
+            tab={selectedTab()}
             tsconfig={typeDownloader.tsconfig()}
+            onScroll={scroll =>
+              setTabs(
+                produce(tabs => {
+                  const tab = tabs.find(tab => tab.path === selectedPath())!
+                  tab.scroll = scroll
+                }),
+              )
+            }
+            onSelect={({ selection }) =>
+              setTabs(
+                produce(tabs => {
+                  const tab = tabs.find(tab => tab.path === selectedPath())!
+                  tab.selection = selection
+                }),
+              )
+            }
             onLink={path => {
-              addTab(path)
-              selectPath(path)
+              if (path.startsWith('http:') || path.startsWith('https:')) {
+                window.open(path, '_blank')
+              } else {
+                path = resolvePath(selectedPath(), path)
+                addTab(path)
+                selectPath(path)
+              }
             }}
             theme={nightOwl}
           />
