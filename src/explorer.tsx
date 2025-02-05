@@ -21,6 +21,7 @@ import {
 import styles from './App.module.css'
 import { Codicon, CodiconKind } from './codicon/index.tsx'
 import { CodiconButton } from './components.tsx'
+import { createWritable } from './utils.ts'
 
 /**********************************************************************************/
 /*                                                                                */
@@ -34,6 +35,7 @@ function createDroppableHandles(onDrop: (path: string) => void) {
       event.preventDefault()
     },
     onDrop(event: DragEvent) {
+      event.stopPropagation()
       const path = event.dataTransfer?.getData('text/plain')
       if (typeof path === 'string') {
         onDrop(path)
@@ -96,7 +98,7 @@ interface ExplorerProps {
 }
 
 export function Explorer(explorerProps: ExplorerProps) {
-  const [cursor, setCursor] = createSignal<string>('index.html')
+  const [cursor, setCursor] = createWritable<string>(() => explorerProps.selectedPath)
   const [temporaryEntry, setTemporaryEntry] = createSignal<'file' | 'dir'>()
 
   const isCursor = createSelector(cursor)
@@ -181,8 +183,8 @@ function Entries(props: { layer: number; path: string; collapsed?: boolean }) {
     }
 
     return {
-      files,
-      dirs,
+      files: files.sort((a, b) => a.localeCompare(b)),
+      dirs: dirs.sort((a, b) => a.localeCompare(b)),
     }
   })
   return (
@@ -190,7 +192,7 @@ function Entries(props: { layer: number; path: string; collapsed?: boolean }) {
       <Show when={temporaryEntry() === 'dir' && hasTemporaryEntry(props.path)}>
         <TemporaryEntry layer={props.layer} parentPath={props.path} type={temporaryEntry()!} />
       </Show>
-      <Index each={entries().dirs.sort()}>{dir => <Dir layer={props.layer} path={dir()} />}</Index>
+      <Index each={entries().dirs}>{dir => <Dir layer={props.layer} path={dir()} />}</Index>
       <Show when={temporaryEntry() === 'file' && hasTemporaryEntry(props.path)}>
         <TemporaryEntry layer={props.layer} parentPath={props.path} type={temporaryEntry()!} />
       </Show>
@@ -238,7 +240,7 @@ function Entry(
           '--layer': props.layer,
           ...props.style,
         }}
-        onClick={event => {
+        onClick={(event: MouseEvent) => {
           batch(() => {
             props.onClick?.(event)
             setCursor(props.path)
@@ -249,8 +251,12 @@ function Entry(
         <Codicon style={{ 'margin-left': '-3px' }} kind={props.kind} />
         <Show when={editable()} fallback={<span class={styles.title}>{getName(props.path)}</span>}>
           <Input
-            onBlur={() => setEditable(false)}
-            onSubmit={path => explorerProps.onEntryRename(props.path, path)}
+            onBlur={event => {
+              const path = `${getParentPath(props.path)}/${event.currentTarget.value}`
+              explorerProps.onEntryRename(props.path, path)
+              setEditable(false)
+            }}
+            onSubmit={() => setEditable(false)}
             initialValue={getName(props.path)}
           />
         </Show>
@@ -291,8 +297,11 @@ function TemporaryEntry(props: { parentPath: string; layer: number; type: 'file'
       <Codicon kind={props.type === 'dir' ? 'chevron-right' : 'dash'} />
       <Input
         onBlur={setTemporaryEntry}
-        onSubmit={path => {
-          explorerProps.onEntryCreate(`${props.parentPath}/${path}`, props.type)
+        onSubmit={event => {
+          explorerProps.onEntryCreate(
+            `${props.parentPath}/${event.currentTarget.value}`,
+            props.type,
+          )
           setTemporaryEntry()
         }}
       />
@@ -367,13 +376,13 @@ function Dir(props: { layer: number; path: string }) {
 function Input(props: {
   class?: string
   initialValue?: string
-  onBlur(event: FocusEvent): void
-  onSubmit(name: string): void
+  onBlur(event: FocusEvent & { currentTarget: HTMLInputElement }): void
+  onSubmit(event: KeyboardEvent & { currentTarget: HTMLInputElement }): void
   style?: JSX.CSSProperties
 }) {
-  const [name, setName] = createSignal(props.initialValue || '')
   return (
     <input
+      value={props.initialValue}
       ref={element =>
         onMount(() => {
           setTimeout(() => {
@@ -382,17 +391,15 @@ function Input(props: {
           }, 0)
         })
       }
-      value={name()}
       class={clsx(styles.input, props.class)}
       style={props.style}
       spellcheck={false}
       onBlur={props.onBlur}
-      onKeyDown={e => {
-        if (e.code === 'Enter') {
-          props.onSubmit(name())
+      onKeyDown={event => {
+        if (event.code === 'Enter') {
+          props.onSubmit(event)
         }
       }}
-      onInput={e => setName(e.currentTarget.value)}
     />
   )
 }
